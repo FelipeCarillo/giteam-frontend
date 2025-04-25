@@ -4,6 +4,10 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 // Definição dos textos em português e inglês
 export const translations = {
     'pt-BR': {
+        //Home
+        
+
+
         // Layout
         dashboard: 'Painel',
         myAgents: 'Meus Agentes',

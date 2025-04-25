@@ -41,7 +41,7 @@ const Sidebar = ({ drawerOpen, toggleDrawer }) => {
     const drawerWidth = 240;
 
     const menuItems = [
-        { text: t('dashboard'), icon: <DashboardIcon />, path: '/' },
+        { text: t('dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
         { text: t('myAgents'), icon: <SmartToyOutlinedIcon />, path: '/agents' },
         { text: t('repositories'), icon: <FolderIcon />, path: '/repositories' },
         { text: t('operationHistory'), icon: <HistoryIcon />, path: '/operations' },
