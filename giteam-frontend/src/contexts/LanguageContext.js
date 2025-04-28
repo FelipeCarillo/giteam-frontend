@@ -5,8 +5,8 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 export const translations = {
     'pt-BR': {
         //Home
-        
-
+        homeTitle1: 'Colaboração do GitHub pontencializada por IA',
+        homeTitle2: 'Aprimore seu fluxo de trabalho com IA que entende seu código, agiliza as revisões e ajuda a resolver problemas mais rapidamente.',
 
         // Layout
         dashboard: 'Painel',
@@ -131,6 +131,10 @@ export const translations = {
         'model': 'Modelo',
     },
     'en-US': {
+        //Home
+        homeTitle1: 'AI-powered GitHub collaboration',
+        homeTitle2: 'Enhance your workflow with AI that understands your code, streamlines reviews, and helps solve issues faster.',
+
         // Layout
         dashboard: 'Dashboard',
         myAgents: 'My Agents',

@@ -1,41 +1,30 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container, Box, Typography, Button, useMediaQuery,
-  Drawer, ButtonGroup, ThemeProvider, createTheme, CssBaseline,
-  Card, CardActions, CardContent, CardMedia, IconButton
+  ThemeProvider, CssBaseline, Divider,
+  Card, CardContent, CardMedia, IconButton, useTheme,
 } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
-import SettingsSharpIcon from '@mui/icons-material/SettingsSharp';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import { loginWithGitHub } from '../services/auth';
 import aiImage from '../images/ai-hand.jpg';
 import codeImage from '../images/code-anl.jpg';
 import teamImage from '../images/team-work.jpg';
+import { ThemeContext } from '../components/layout/Layout';
+import LanguageSwitcher from '../components/layout/LanguageSwitcher';
+import Brightness4Icon from '@mui/icons-material/Brightness4';
+import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function Home() {
-  const [mode, setMode] = useState('system');
-  const [open, setOpen] = useState(false);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-
-  const actualMode = useMemo(() => {
-    if (mode === 'system') {
-      return prefersDarkMode ? 'dark' : 'light';
-    }
-    return mode;
-  }, [mode, prefersDarkMode]);
-
-  const theme = useMemo(() =>
-    createTheme({
-      palette: {
-        mode: actualMode,
-      },
-    }), [actualMode]
-  );
+  const theme = useTheme();
+  const colorMode = React.useContext(ThemeContext);
+  
 
   const cards = [
     {
@@ -55,7 +44,7 @@ function Home() {
     }
   ];
 
-  const CARD_WIDTH = 340;
+  const CARD_WIDTH = 400;
   const CARD_HEIGHT = 300;
 
   const goToNextCard = useCallback(() => {
@@ -76,18 +65,6 @@ function Home() {
     }
   }, [cards.length, isTransitioning]);
 
-  const handleSetMode = (newMode) => {
-    setMode(newMode);
-    localStorage.setItem('themeMode', newMode);
-  };
-
-  useEffect(() => {
-    const savedMode = localStorage.getItem('themeMode');
-    if (savedMode) {
-      setMode(savedMode);
-    }
-  }, []);
-
   useEffect(() => {
     const interval = setInterval(() => {
       goToNextCard();
@@ -95,15 +72,16 @@ function Home() {
     return () => clearInterval(interval);
   }, [goToNextCard]);
 
-  const toggleDrawer = (newOpen) => () => {
-    setOpen(newOpen);
-  };
 
   const handleGitHubLogin = () => {
     loginWithGitHub();
   };
 
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const primaryColor = theme.palette.primary.main;
+
+  const { t } = useLanguage();
 
   return (
     <ThemeProvider theme={theme}>
@@ -113,31 +91,29 @@ function Home() {
           sx={{
             minHeight: '10vh', width: '100vw', maxWidth: '100%', position: 'fixed',
             display: 'flex', top: 0, alignItems: 'center', justifyContent: 'space-between',
-            bgcolor: theme.palette.background.paper, boxShadow: 1, zIndex: 1100
           }}>
           <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', pl: '10px', height: '100%' }}>
-            <SmartToyOutlinedIcon sx={{ fontSize: 28, mr: 1.5 }} />
+            <SmartToyOutlinedIcon
+              sx={{
+                fontSize: 24,
+                mr: 1,
+                color: primaryColor
+                }}
+              />
             <Typography variant="h6" fontWeight="600">GiTeam</Typography>
           </Box>
 
           <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', pr: '10px', height: '100%' }}>
-            <SettingsSharpIcon
-              color="inherit"
-              onClick={toggleDrawer(true)}
-              sx={{ mr: 2, fontSize: 35, cursor: 'pointer' }}
-            />
+            <LanguageSwitcher />
+            
+            <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24, my: 'auto' }} />
 
-            <Drawer anchor="right" open={open} onClose={toggleDrawer(false)}
-              PaperProps={{ sx: { width: '15vw', minWidth: '250px' } }}>
-              <Typography variant="subtitle1" sx={{ pt: 2, pl: 2.5, fontWeight: 'bold', mb: 1 }}>Mode</Typography>
-              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-                <ButtonGroup variant="outlined">
-                  <Button onClick={() => handleSetMode('light')} variant={mode === 'light' ? 'contained' : 'outlined'}>Light</Button>
-                  <Button onClick={() => handleSetMode('system')} variant={mode === 'system' ? 'contained' : 'outlined'}>System</Button>
-                  <Button onClick={() => handleSetMode('dark')} variant={mode === 'dark' ? 'contained' : 'outlined'}>Dark</Button>
-                </ButtonGroup>
-              </Box>
-            </Drawer>
+            <IconButton onClick={colorMode.toggleColorMode} color="inherit" sx={{ mx: 1 }}>
+              {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+            </IconButton>
+                    
+            <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24, my: 'auto' }} />
+            
 
             <Button
               variant="outlined"
@@ -157,19 +133,26 @@ function Home() {
 
         <Container maxWidth={false} disableGutters sx={{ minHeight: 'calc(100vh - 10vh)', mt: '10vh', display: 'flex', flexDirection: 'row', p: 0 }}>
           <Box sx={{
-            flex: 1,
+            flex: 3,
             bgcolor: theme.palette.mode === 'dark' ? 'rgba(30, 30, 30, 0.9)' : '#d0d0d0',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexDirection: 'column', p: 3
+            flexDirection: 'column', p: 3,
+            position: 'relative'
           }}>
-            <Typography variant="h4" sx={{ mb: 2, textAlign: 'center' }}>AI-powered GitHub collaboration</Typography>
-            <Typography variant="h5" sx={{ textAlign: 'center' }}>
-              Enhance your workflow with AI that understands your code, streamlines reviews, and helps solve issues faster.
+
+            <Typography variant="h4" sx={{ mb: 2, textAlign: 'center' }}
+            >
+              {t('homeTitle1')}           
             </Typography>
+
+            <Typography variant="h5" sx={{ textAlign: 'center' }}>
+            {t('homeTitle2')}
+            </Typography>
+
           </Box>
 
           <Box sx={{
-            flex: 1,
+            flex: 2,
             bgcolor: theme.palette.mode === 'dark' ? 'rgba(50, 50, 50, 0.9)' : '#f0f0f0',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             position: 'relative'
@@ -177,11 +160,11 @@ function Home() {
             <Box sx={{ width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', px: 2, gap: 2 }}>
               <IconButton onClick={goToPrevCard} disabled={isTransitioning}
                 sx={{
-                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.05)',
-                  '&:hover': {
-                    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.15)'
-                  }
-                }}>
+                  '&:hover': { backgroundColor: 'transparent' },
+                  '&:focus': { backgroundColor: 'transparent' },
+                  '&:active': { backgroundColor: 'transparent' },
+                }}
+              >
                 <ArrowBackIosIcon />
               </IconButton>
 
@@ -224,11 +207,11 @@ function Home() {
 
               <IconButton onClick={goToNextCard} disabled={isTransitioning}
                 sx={{
-                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.05)',
-                  '&:hover': {
-                    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.25)' : 'rgba(0, 0, 0, 0.15)'
-                  }
-                }}>
+                  '&:hover': { backgroundColor: 'transparent' },
+                  '&:focus': { backgroundColor: 'transparent' },
+                  '&:active': { backgroundColor: 'transparent' },
+                }}
+              >
                 <ArrowForwardIosIcon />
               </IconButton>
             </Box>
