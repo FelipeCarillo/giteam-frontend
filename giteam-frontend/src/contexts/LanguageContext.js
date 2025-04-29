@@ -7,6 +7,14 @@ export const translations = {
         //Home
         homeTitle1: 'Colaboração do GitHub pontencializada por IA',
         homeTitle2: 'Aprimore seu fluxo de trabalho com IA que entende seu código, agiliza as revisões e ajuda a resolver problemas mais rapidamente.',
+        CardTitle1: "Reviews de PR inteligentes",
+        CardDesc1: 'Obtenha insights com tecnologia de IA sobre suas pull requests. Economize tempo e identifique problemas antes que eles cheguem à produção.',
+        CardTitle2: 'Análise de Código',
+        CardDesc2: 'Verificações automáticas de qualidade de código e varredura de segurança para identificar possíveis bugs e vulnerabilidades.',
+        CardTitle3: 'Colaboração em equipe',
+        CardDesc3: 'Aprimore os fluxos de trabalho da equipe com resumos de problemas e geração de documentação assistidos por IA.',
+
+
 
         // Layout
         dashboard: 'Painel',
@@ -134,6 +142,13 @@ export const translations = {
         //Home
         homeTitle1: 'AI-powered GitHub collaboration',
         homeTitle2: 'Enhance your workflow with AI that understands your code, streamlines reviews, and helps solve issues faster.',
+        CardTitle1: "Smart PR Reviews",
+        CardDesc1: 'Get AI-powered insights on your pull requests. Save time and catch issues before they reach production.',
+        CardTitle2: 'Code Analysis',
+        CardDesc2: 'Automatic code quality checks and security scanning to identify potential bugs and vulnerabilities.',
+        CardTitle3: 'Team Collaboration',
+        CardDesc3: 'Enhance team workflows with AI-assisted issue summaries and documentation generation.',
+
 
         // Layout
         dashboard: 'Dashboard',

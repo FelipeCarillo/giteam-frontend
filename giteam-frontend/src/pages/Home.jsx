@@ -24,23 +24,24 @@ function Home() {
 
   const theme = useTheme();
   const colorMode = React.useContext(ThemeContext);
+  const { t } = useLanguage();
   
 
   const cards = [
     {
-      title: "Smart PR Reviews",
+      title: t('CardTitle1'),
       image: aiImage,
-      description: "Get AI-powered insights on your pull requests. Save time and catch issues before they reach production."
+      description: t('CardDesc1'),
     },
     {
-      title: "Code Analysis",
+      title: t('CardTitle2'),
       image: codeImage,
-      description: "Automatic code quality checks and security scanning to identify potential bugs and vulnerabilities."
+      description: t('CardDesc2')
     },
     {
-      title: "Team Collaboration",
+      title: t('CardTitle3'),
       image: teamImage,
-      description: "Enhance team workflows with AI-assisted issue summaries and documentation generation."
+      description: t('CardDesc3')
     }
   ];
 
@@ -68,7 +69,7 @@ function Home() {
   useEffect(() => {
     const interval = setInterval(() => {
       goToNextCard();
-    }, 5000);
+    }, 10000);
     return () => clearInterval(interval);
   }, [goToNextCard]);
 
@@ -81,7 +82,6 @@ function Home() {
 
   const primaryColor = theme.palette.primary.main;
 
-  const { t } = useLanguage();
 
   return (
     <ThemeProvider theme={theme}>
