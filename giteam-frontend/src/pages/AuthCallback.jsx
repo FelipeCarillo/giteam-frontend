@@ -35,23 +35,9 @@ function AuthCallback() {
   useEffect(() => {
     const processAuth = async () => {
       try {
-        const minProcessingTime = new Promise(resolve => setTimeout(resolve, 1500));
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        console.log('Auth code:', code);
-
-        if (!code) {
-          throw new Error('No authorization code found in URL');
-        }
-        
-        const response = await handleAuthCallback(code);
-        console.log('Auth response:', response);
-
-        await minProcessingTime;
-
-        if (!response.ok) {
-          throw new Error(`Authentication failed: ${response.statusText}`);
+        const response = await handleAuthCallback();
+        if (!response) {
+          throw new Error('No authentication token found');
         }
 
         setIsSuccess(true);

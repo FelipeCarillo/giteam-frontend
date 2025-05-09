@@ -1,11 +1,10 @@
-import axios from 'axios';
+import api from './api';
+import process from 'process';
 
-const GITHUB_AUTH_URL = 'https://github.com/login/oauth/authorize';
-const GITHUB_CLIENT_ID = process.env.REACT_APP_GITHUB_CLIENT_ID;
-const GITHUB_REDIRECT_URL = process.env.REACT_APP_GITHUB_REDIRECT_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
 
 export const loginWithGitHub = () => {
-    window.location.href = `${GITHUB_AUTH_URL}?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(GITHUB_REDIRECT_URL)}&scope=user,repo`;
+    window.location.href = `${BACKEND_URL}/auth/login/github`;
 };
 
 export const isAuthenticated = () => {
@@ -21,11 +20,16 @@ export const setToken = (token) => {
     localStorage.setItem('githubToken', token);
 }
 
-export const handleAuthCallback = async (code) => {
-    console.log('Initializing authentication callback with code:', code);
-    const response = await axios.get(`http://localhost:8000/auth/callback/aaa?code=${code}`);
-    const token = response.data.token;
-    setToken(token);
+export const handleAuthCallback = async () => {
+    console.log('Initializing authentication callback...');
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get('code');
+    console.log('Access token received:', accessToken);
+    if (!accessToken) {
+        throw new Error('No access token found in the URL');
+    }
+    setToken(accessToken);
+    return accessToken;
 };
 
 export const getUserInfo = async () => {
@@ -36,11 +40,13 @@ export const getUserInfo = async () => {
     }
 
     try {
-        const response = await axios.get(`/user`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await api.get('/user', {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }); 
 
-        return response.data;
+        return response.data.user;
     } catch (error) {
         if (error.response && error.response.status === 401) {
             logout();

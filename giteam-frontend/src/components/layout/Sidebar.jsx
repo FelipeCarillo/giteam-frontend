@@ -133,7 +133,7 @@ const Sidebar = ({ drawerOpen, toggleDrawer }) => {
                 <Button
                     variant="outlined"
                     fullWidth
-                    onClick={logout}
+                    onClick={() => logout}
                     startIcon={<LogoutIcon />}
                     sx={{
                         borderColor: borderColor,

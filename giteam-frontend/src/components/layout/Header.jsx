@@ -28,6 +28,8 @@ const Header = ({ title, toggleDrawer, user }) => {
     const secondaryTextColor = isDarkMode ? '#8b949e' : '#57606a';
     const borderColor = isDarkMode ? '#30363d' : 'rgba(0,0,0,0.08)';
 
+    console.log('Header user:', user); // Debugging line
+
     return (
         <AppBar
             position="sticky"
@@ -65,7 +67,7 @@ const Header = ({ title, toggleDrawer, user }) => {
                     <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
                         <GitHubIcon sx={{ mr: 1, color: secondaryTextColor }} />
                         <Typography variant="body2" color={secondaryTextColor}>
-                            {user ? user.login : 'Loading...'}
+                            {user ? user.name : 'Loading...'}
                         </Typography>
                     </Box>
                 </Box>

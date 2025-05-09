@@ -1,5 +1,6 @@
 // routes.js
 import { Navigate } from 'react-router-dom';
+import { isAuthenticated } from './services/auth'; 
 
 // Pages
 import Home from './pages/Home';
@@ -12,10 +13,6 @@ import Costs from './pages/Costs';
 import Settings from './pages/Settings';
 import AuthCallback from './pages/AuthCallback';
 
-const isAuthenticated = () => {
-    return localStorage.getItem('githubToken') !== null;
-};
-
 const ProtectedRoute = ({ children }) => {
     if (!isAuthenticated()) {
         return <Navigate to="/" replace />;
@@ -24,9 +21,12 @@ const ProtectedRoute = ({ children }) => {
     return children;
 };
 
-// Aplicar ProtectedRoute para todas as rotas protegidas
 const withProtection = (Component) => {
-    return <ProtectedRoute><Component /></ProtectedRoute>;
+    return () => (
+        <ProtectedRoute>
+            <Component />
+        </ProtectedRoute>
+    );
 };
 
 const routes = [
@@ -40,31 +40,31 @@ const routes = [
     },
     {
         path: '/dashboard',
-        element: <Dashboard />,
+        element: withProtection(Dashboard)(),
     },
     {
         path: '/agents',
-        element: <Agents />,
+        element: withProtection(Agents)(),
     },
     {
         path: '/agents/create',
-        element: <AgentCreate />,
+        element: withProtection(AgentCreate)(),
     },
     {
         path: '/repositories',
-        element: <Repositories />,
+        element: withProtection(Repositories)(),
     },
     {
         path: '/operations',
-        element: <OperationHistory />,
+        element: withProtection(OperationHistory)(),
     },
     {
         path: '/costs',
-        element: <Costs />,
+        element: withProtection(Costs)(),
     },
     {
         path: '/settings',
-        element: <Settings />,
+        element: withProtection(Settings)(),
     },
     {
         path: '*',
