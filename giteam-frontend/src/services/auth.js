@@ -40,11 +40,7 @@ export const getUserInfo = async () => {
     }
 
     try {
-        const response = await api.get('/user', {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        }); 
+        const response = await api.get('/user'); 
 
         return response.data.user;
     } catch (error) {

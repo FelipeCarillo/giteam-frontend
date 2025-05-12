@@ -9,9 +9,9 @@ import {
     useTheme,
     useMediaQuery,
     Divider,
+    Avatar
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import GitHubIcon from '@mui/icons-material/GitHub';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { ThemeContext } from './Layout';
@@ -65,10 +65,12 @@ const Header = ({ title, toggleDrawer, user }) => {
                     <Divider orientation="vertical" flexItem sx={{ mx: 1, height: 24, my: 'auto' }} />
                     
                     <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
-                        <GitHubIcon sx={{ mr: 1, color: secondaryTextColor }} />
                         <Typography variant="body2" color={secondaryTextColor}>
                             {user ? user.name : 'Loading...'}
                         </Typography>
+                        {user && (                        
+                            <Avatar alt="Avatar" sizes='10' sx={{ml: 1}} src={user?.avatar_url} />
+                        )}
                     </Box>
                 </Box>
             </Toolbar>
