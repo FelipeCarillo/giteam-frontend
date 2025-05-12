@@ -40,6 +40,11 @@ const Sidebar = ({ drawerOpen, toggleDrawer }) => {
     const borderColor = isDarkMode ? '#30363d' : 'rgba(0,0,0,0.08)';
     const drawerWidth = 240;
 
+    const signOut = () => {
+        logout();
+        navigate('/');
+    }
+
     const menuItems = [
         { text: t('dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
         { text: t('myAgents'), icon: <SmartToyOutlinedIcon />, path: '/agents' },
@@ -133,7 +138,8 @@ const Sidebar = ({ drawerOpen, toggleDrawer }) => {
                 <Button
                     variant="outlined"
                     fullWidth
-                    onClick={() => logout}
+                    onClick={() => signOut()}
+                    color="error"
                     startIcon={<LogoutIcon />}
                     sx={{
                         borderColor: borderColor,
