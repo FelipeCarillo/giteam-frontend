@@ -134,7 +134,7 @@ function Home() {
         <Container maxWidth={false} disableGutters sx={{ minHeight: 'calc(100vh - 10vh)', mt: '10vh', display: 'flex', flexDirection: 'row', p: 0 }}>
           <Box sx={{
             flex: 3,
-            bgcolor: theme.palette.mode === 'dark' ? 'rgba(30, 30, 30, 0.9)' : '#d0d0d0',
+            bgcolor: theme.palette.mode === 'dark' ? 'rgba(30, 30, 30, 0.9)' : 'white',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexDirection: 'column', p: 3,
             position: 'relative'
@@ -153,7 +153,7 @@ function Home() {
 
           <Box sx={{
             flex: 2,
-            bgcolor: theme.palette.mode === 'dark' ? 'rgba(50, 50, 50, 0.9)' : '#f0f0f0',
+            bgcolor: theme.palette.mode === 'dark' ? 'rgba(30, 30, 30, 0.9)' : 'white',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             position: 'relative'
           }}>
