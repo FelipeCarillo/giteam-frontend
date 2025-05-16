@@ -30,4 +30,30 @@ api.interceptors.response.use(
     }
 );
 
-export default api;
+const apiGitHub = axios.create({
+    baseURL: "https://api.github.com",
+    headers: {
+        "Content-Type": "application/json",
+    },
+});
+
+apiGitHub.interceptors.request.use((config) => {
+    const token = localStorage.getItem("githubToken");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+apiGitHub.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            localStorage.removeItem("githubToken");
+            window.location.href = "/";
+        }
+        return Promise.reject(error);
+    }
+);
+
+export { api, apiGitHub };  
