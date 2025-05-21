@@ -34,15 +34,6 @@ import CodeIcon from '@mui/icons-material/Code';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import Layout from '../components/layout/Layout';
-import { 
-    repositories, 
-    availableModels, 
-    agentFunctions,
-    responseLengthOptions,
-    getRepositoryById,
-    canAddAgentToRepository,
-    getAvailableFunctionsForRepository
-} from '../services/mockData';
 
 const AgentCreate = () => {
     const theme = useTheme();
@@ -50,9 +41,8 @@ const AgentCreate = () => {
     const location = useLocation();
     const isDarkMode = theme.palette.mode === 'dark';
     
-    // Get initial repository ID from location state if available
+    // Pegue o repositoryId do estado da localização, se disponível
     const initialRepoId = location.state?.repositoryId || null;
-    const initialRepo = initialRepoId ? getRepositoryById(initialRepoId) : null;
     
     const [activeStep, setActiveStep] = useState(0);
     const [agentData, setAgentData] = useState({
@@ -65,43 +55,138 @@ const AgentCreate = () => {
         responseLength: 'medium'
     });
 
-    // Estado para armazenar funções disponíveis para o repositório selecionado
+    // Estado para armazenar repositórios, funções e modelos que seriam carregados da API
+    const [repositories, setRepositories] = useState([]);
     const [availableFunctions, setAvailableFunctions] = useState([]);
+    const [availableModels, setAvailableModels] = useState([]);
+    const [responseLengthOptions, setResponseLengthOptions] = useState([]);
     
     const borderColor = isDarkMode ? '#30363d' : 'rgba(0,0,0,0.08)';
     const paperBgColor = isDarkMode ? '#161b22' : '#ffffff';
     const primaryTextColor = isDarkMode ? '#f0f6fc' : '#24292e';
     const secondaryTextColor = isDarkMode ? '#8b949e' : '#57606a';
 
-    // Steps for the stepper
+    // Passos para o stepper
     const steps = ['Repositório e Função', 'Modelo e Configuração', 'Revisão'];
 
-    // Atualiza as funções disponíveis quando o repositório muda
+    // Carrega dados da API quando o componente montar
+    useEffect(() => {
+        // Aqui você faria chamadas à API real para carregar os dados
+        fetchRepositories();
+        fetchAgentFunctions();
+        fetchAvailableModels();
+        fetchResponseLengthOptions();
+    }, []);
+
+    // Efeito para atualizar funções disponíveis quando o repositório muda
     useEffect(() => {
         if (agentData.repository) {
-            const repo = getRepositoryById(agentData.repository);
-            if (repo) {
-                // Atualiza as funções disponíveis
-                const availableFuncs = getAvailableFunctionsForRepository(repo);
-                setAvailableFunctions(availableFuncs);
-                
-                // Se a função atual não estiver disponível, limpa a seleção
-                if (agentData.function && !availableFuncs.some(f => f.id === agentData.function)) {
-                    setAgentData(prev => ({ ...prev, function: '' }));
-                }
-                
-                // Atualiza branches padrão para PR Review ou Both
-                if (repo.agents.some(a => a.branches)) {
-                    const defaultBranches = repo.agents.find(a => a.branches)?.branches || ['main'];
-                    setAgentData(prev => ({ ...prev, branches: defaultBranches }));
-                } else {
-                    setAgentData(prev => ({ ...prev, branches: ['main'] }));
-                }
-            }
+            fetchAvailableFunctionsForRepository(agentData.repository);
+            
+            // Em uma implementação real, você obteria os branches padrão do repositório
+            // Por enquanto, vamos definir 'main' como branch padrão
+            setAgentData(prev => ({ ...prev, branches: ['main'] }));
         } else {
-            setAvailableFunctions(Object.values(agentFunctions));
+            // Quando nenhum repositório é selecionado, mostrar todas as funções
+            fetchAgentFunctions();
         }
     }, [agentData.repository]);
+
+    // Funções para buscar dados que substituiriam o mockData
+    const fetchRepositories = async () => {
+        // Em uma implementação real, isso seria uma chamada à API
+        // Por enquanto, vamos simular com dados vazios
+        setRepositories([
+            // Os repositórios seriam carregados da API
+            { id: 1, name: 'giteams' },
+            { id: 2, name: 'chat-question-awnser' },
+            { id: 3, name: 'apaeleilao_backend' },
+        ]);
+    };
+
+    const fetchAgentFunctions = async () => {
+        // Em uma implementação real, isso seria uma chamada à API
+        // Por enquanto, vamos simular com dados básicos
+        setAvailableFunctions([
+            {
+                id: 'PR Review',
+                title: 'PR Review Agent',
+                description: 'Revisa Pull Requests automaticamente, verificando a qualidade do código, possíveis bugs, problemas de segurança e aderência às boas práticas.'
+            },
+            {
+                id: 'Issue Resolution',
+                title: 'Issue Resolution Agent',
+                description: 'Analisa problemas reportados e fornece possíveis soluções ou passos para debugging.'
+            },
+            {
+                id: 'Both',
+                title: 'Full-Service Agent',
+                description: 'Combina as capacidades de PR Review e Issue Resolution em um único agente.'
+            }
+        ]);
+    };
+
+    const fetchAvailableFunctionsForRepository = async (repositoryId) => {
+        // Em uma implementação real, isso seria uma chamada à API com o ID do repositório
+        // Por enquanto, vamos simular com todas as funções disponíveis
+        setAvailableFunctions([
+            {
+                id: 'PR Review',
+                title: 'PR Review Agent',
+                description: 'Revisa Pull Requests automaticamente, verificando a qualidade do código, possíveis bugs, problemas de segurança e aderência às boas práticas.'
+            },
+            {
+                id: 'Issue Resolution',
+                title: 'Issue Resolution Agent',
+                description: 'Analisa problemas reportados e fornece possíveis soluções ou passos para debugging.'
+            },
+            {
+                id: 'Both',
+                title: 'Full-Service Agent',
+                description: 'Combina as capacidades de PR Review e Issue Resolution em um único agente.'
+            }
+        ]);
+    };
+
+    const fetchAvailableModels = async () => {
+        // Em uma implementação real, isso seria uma chamada à API
+        setAvailableModels([
+            { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', costPerToken: 0.00006, specialties: ['Code', 'Reasoning'], maxTokens: 8000 },
+            { id: 'gpt-3.5', name: 'GPT-3.5', provider: 'OpenAI', costPerToken: 0.00001, specialties: ['Speed', 'General'], maxTokens: 4000 },
+            { id: 'claude-3', name: 'Claude 3', provider: 'Anthropic', costPerToken: 0.00005, specialties: ['Documentation', 'Reasoning'], maxTokens: 7000 },
+            { id: 'llama-3', name: 'Llama 3', provider: 'Meta', costPerToken: 0.000015, specialties: ['Open Source', 'General'], maxTokens: 4000 },
+        ]);
+    };
+
+    const fetchResponseLengthOptions = async () => {
+        // Em uma implementação real, isso seria uma chamada à API
+        setResponseLengthOptions([
+            {
+                id: 'concise',
+                title: 'Conciso',
+                description: 'Respostas curtas e diretas (40% dos tokens máximos)',
+                tokenPercentage: 0.4
+            },
+            {
+                id: 'medium',
+                title: 'Médio',
+                description: 'Respostas com nível médio de detalhes (60% dos tokens máximos)',
+                tokenPercentage: 0.6
+            },
+            {
+                id: 'detailed',
+                title: 'Detalhado',
+                description: 'Respostas completas e detalhadas (100% dos tokens máximos)',
+                tokenPercentage: 1.0
+            }
+        ]);
+    };
+
+    // Função para obter o nome do repositório pelo ID
+    const getRepositoryNameById = (repoId) => {
+        const repo = repositories.find(r => r.id === repoId);
+        return repo ? repo.name : 'Não selecionado';
+    };
 
     // Handle form changes
     const handleChange = (field) => (event) => {
@@ -192,11 +277,8 @@ const AgentCreate = () => {
                                             <MenuItem 
                                                 key={repo.id} 
                                                 value={repo.id}
-                                                disabled={!getAvailableFunctionsForRepository(repo).length}
                                             >
-                                                {repo.name} 
-                                                {!getAvailableFunctionsForRepository(repo).length && 
-                                                    " (Limite de agentes atingido)"}
+                                                {repo.name}
                                             </MenuItem>
                                         ))}
                                     </Select>
@@ -257,10 +339,7 @@ const AgentCreate = () => {
                                         sx={{ mt: 2 }}
                                         icon={<InfoIcon />}
                                     >
-                                        Este repositório já atingiu o limite de agentes.{' '}
-                                        {getRepositoryById(agentData.repository)?.agents.some(a => a.function === 'Both') ?
-                                            'Já existe um agente Full-Service neste repositório.' :
-                                            'Já existem agentes para todas as funções disponíveis.'}
+                                        Este repositório já atingiu o limite de agentes.
                                     </Alert>
                                 )}
                             </Grid>
@@ -459,7 +538,7 @@ const AgentCreate = () => {
                                                 Função
                                             </Typography>
                                             <Typography variant="body1" sx={{ color: primaryTextColor, mb: 2 }}>
-                                                {agentFunctions[agentData.function]?.title || 'Não selecionada'}
+                                                {availableFunctions.find(f => f.id === agentData.function)?.title || 'Não selecionada'}
                                             </Typography>
                                         </Grid>
                                         
@@ -468,7 +547,7 @@ const AgentCreate = () => {
                                                 Repositório
                                             </Typography>
                                             <Typography variant="body1" sx={{ color: primaryTextColor, mb: 2 }}>
-                                                {getRepositoryById(agentData.repository)?.name || 'Não selecionado'}
+                                                {getRepositoryNameById(agentData.repository)}
                                             </Typography>
                                         </Grid>
                                         

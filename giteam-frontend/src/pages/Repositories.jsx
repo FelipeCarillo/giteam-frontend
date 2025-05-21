@@ -1,70 +1,100 @@
 // pages/Repositories.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-    Box, 
-    Typography, 
-    Paper, 
-    Button, 
-    TextField, 
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    InputAdornment,
-    useTheme
+    Box, Typography, Paper, Button, TextField, Dialog,
+    DialogTitle, DialogContent, DialogActions,
+    InputAdornment, useTheme
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
 import GitHubIcon from '@mui/icons-material/GitHub';
+
 import Layout from '../components/layout/Layout';
 import RepositoryCard from '../components/repository/RepositoryCard';
-import { repositories } from '../services/mockData';
 
 const Repositories = () => {
     const theme = useTheme();
     const navigate = useNavigate();
     const isDarkMode = theme.palette.mode === 'dark';
-    
-    const [localRepositories, setLocalRepositories] = useState(repositories);
+
+    const [repositories, setRepositories] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [dialogOpen, setDialogOpen] = useState(false);
     const [newRepoUrl, setNewRepoUrl] = useState('');
-    
+    const [loading, setLoading] = useState(true);
+
     const borderColor = isDarkMode ? '#30363d' : 'rgba(0,0,0,0.08)';
     const paperBgColor = isDarkMode ? '#161b22' : '#ffffff';
     const primaryTextColor = isDarkMode ? '#f0f6fc' : '#24292e';
 
-    // Filter repositories based on search query
-    const filteredRepositories = localRepositories.filter(repo => 
+    // 🔄 Fetch repositories from API
+    useEffect(() => {
+        const fetchRepositories = async () => {
+            try {
+                const res = await fetch('/api/repositories');
+                const data = await res.json();
+                setRepositories(data);
+            } catch (error) {
+                console.error('Erro ao buscar repositórios:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchRepositories();
+    }, []);
+
+    // 🔍 Filter by name
+    const filteredRepositories = repositories.filter(repo =>
         repo.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const handleAddAgent = (repoId) => {
-        navigate('/agents/create', { state: { repositoryId: repoId } });
+    // ➕ Add new repo
+    const handleAddRepository = async () => {
+        if (!newRepoUrl) return;
+
+        const repoName = newRepoUrl.split('/').pop() || 'new-repo';
+        const newRepo = {
+            name: repoName,
+            link: newRepoUrl,
+            agents: []
+        };
+
+        try {
+            const res = await fetch('/api/repositories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newRepo)
+            });
+            const savedRepo = await res.json();
+            setRepositories(prev => [...prev, savedRepo]);
+            closeAddDialog();
+        } catch (error) {
+            console.error('Erro ao adicionar repositório:', error);
+        }
     };
 
+    // 🧠 Local toggle (pode ser trocado por chamada PATCH futuramente)
     const handleToggleActiveAgent = (agentId) => {
-        const updatedRepositories = localRepositories.map(repo => {
-            const updatedAgents = repo.agents.map(agent => {
-                if (agent.id === agentId) {
-                    return { ...agent, active: !agent.active };
-                }
-                return agent;
-            });
+        const updated = repositories.map(repo => {
+            const updatedAgents = repo.agents.map(agent =>
+                agent.id === agentId ? { ...agent, active: !agent.active } : agent
+            );
             return { ...repo, agents: updatedAgents };
         });
-        setLocalRepositories(updatedRepositories);
+        setRepositories(updated);
     };
 
     const handleDeleteAgent = (agentId) => {
-        const updatedRepositories = localRepositories.map(repo => {
-            return {
-                ...repo,
-                agents: repo.agents.filter(agent => agent.id !== agentId)
-            };
-        });
-        setLocalRepositories(updatedRepositories);
+        const updated = repositories.map(repo => ({
+            ...repo,
+            agents: repo.agents.filter(agent => agent.id !== agentId)
+        }));
+        setRepositories(updated);
+    };
+
+    const handleAddAgent = (repoId) => {
+        navigate('/agents/create', { state: { repositoryId: repoId } });
     };
 
     const openAddDialog = () => {
@@ -76,31 +106,14 @@ const Repositories = () => {
         setNewRepoUrl('');
     };
 
-    const handleAddRepository = () => {
-        // In a real app, this would validate and add the repository
-        // For demo purposes, we'll add a mock repository
-        if (newRepoUrl) {
-            const repoName = newRepoUrl.split('/').pop() || 'new-repo';
-            const newRepo = {
-                id: localRepositories.length + 1,
-                name: repoName,
-                link: newRepoUrl,
-                agents: []
-            };
-            
-            setLocalRepositories([...localRepositories, newRepo]);
-            closeAddDialog();
-        }
-    };
-
     return (
         <Layout title="Repositories">
-            {/* Search and Add Repository */}
-            <Paper 
+            {/* Search + Add */}
+            <Paper
                 elevation={0}
-                sx={{ 
-                    p: 3, 
-                    mb: 4, 
+                sx={{
+                    p: 3,
+                    mb: 4,
                     borderRadius: 2,
                     backgroundColor: paperBgColor,
                     border: `1px solid ${borderColor}`,
@@ -119,7 +132,7 @@ const Repositories = () => {
                         Add Repository
                     </Button>
                 </Box>
-                
+
                 <TextField
                     fullWidth
                     placeholder="Search repositories"
@@ -137,12 +150,14 @@ const Repositories = () => {
                 />
             </Paper>
 
-            {/* Repositories List */}
-            {filteredRepositories.length === 0 ? (
+            {/* Repositories */}
+            {loading ? (
+                <Typography>Loading repositories...</Typography>
+            ) : filteredRepositories.length === 0 ? (
                 <Paper
                     elevation={0}
-                    sx={{ 
-                        p: 4, 
+                    sx={{
+                        p: 4,
                         textAlign: 'center',
                         borderRadius: 2,
                         backgroundColor: paperBgColor,
@@ -155,7 +170,7 @@ const Repositories = () => {
                 </Paper>
             ) : (
                 filteredRepositories.map(repo => (
-                    <RepositoryCard 
+                    <RepositoryCard
                         key={repo.id}
                         repository={repo}
                         onAddAgent={handleAddAgent}
@@ -165,7 +180,7 @@ const Repositories = () => {
                 ))
             )}
 
-            {/* Add Repository Dialog */}
+            {/* Dialog: Add Repo */}
             <Dialog open={dialogOpen} onClose={closeAddDialog} maxWidth="sm" fullWidth>
                 <DialogTitle>Add GitHub Repository</DialogTitle>
                 <DialogContent>
@@ -189,8 +204,8 @@ const Repositories = () => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={closeAddDialog}>Cancel</Button>
-                    <Button 
-                        onClick={handleAddRepository} 
+                    <Button
+                        onClick={handleAddRepository}
                         variant="contained"
                         disabled={!newRepoUrl}
                     >

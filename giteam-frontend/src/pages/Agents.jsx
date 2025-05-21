@@ -1,5 +1,5 @@
 // pages/Agents.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     Box, 
     Typography, 
@@ -20,36 +20,54 @@ import SearchIcon from '@mui/icons-material/Search';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import Layout from '../components/layout/Layout';
 import AgentItem from '../components/agent/AgentItem';
-import { getAllAgents, agentOptions } from '../services/mockData';
+// Removida a importação: import { getAllAgents, agentOptions } from '../services/mockData';
 
 const Agents = () => {
     const theme = useTheme();
     const navigate = useNavigate();
     const isDarkMode = theme.palette.mode === 'dark';
-    
-    const [agents, setAgents] = useState(getAllAgents());
+
+    // Estado para armazenar os agentes, inicializado como array vazio em vez de usar getAllAgents()
+    const [agents, setAgents] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [filterType, setFilterType] = useState('all');
-    
+
     const borderColor = isDarkMode ? '#30363d' : 'rgba(0,0,0,0.08)';
     const paperBgColor = isDarkMode ? '#161b22' : '#ffffff';
 
+    // Efeito para carregar os agentes quando o componente montar
+    useEffect(() => {
+        // Aqui você faria uma chamada à API real para buscar os agentes
+        fetchAgents();
+    }, []);
+
+    // Função para buscar agentes da API
+    const fetchAgents = async () => {
+        try {
+            // Exemplo de chamada à API (substitua pelo seu endpoint real)
+            // const response = await fetch('/api/agents');
+            // const data = await response.json();
+            // setAgents(data);
+            
+            // Temporariamente, inicializar com array vazio até implementar a API real
+            setAgents([]);
+        } catch (error) {
+            console.error('Erro ao buscar agentes:', error);
+        }
+    };
+
     // Apply filters and search
     const filteredAgents = agents.filter(agent => {
-        // Filter by status
         if (filterStatus === 'active' && !agent.active) return false;
         if (filterStatus === 'inactive' && agent.active) return false;
-        
-        // Filter by type
+
         if (filterType !== 'all' && agent.function !== filterType) {
-            // Special case for 'Both'
             if (!(filterType === 'Both' && agent.function === 'Both')) {
                 return false;
             }
         }
-        
-        // Search by name or repository
+
         if (searchQuery) {
             const searchLower = searchQuery.toLowerCase();
             return (
@@ -57,23 +75,39 @@ const Agents = () => {
                 agent.repository.toLowerCase().includes(searchLower)
             );
         }
-        
+
         return true;
     });
 
-    const handleToggleActiveAgent = (agentId) => {
-        const updatedAgents = agents.map(agent => {
-            if (agent.id === agentId) {
-                return { ...agent, active: !agent.active };
-            }
-            return agent;
-        });
-        setAgents(updatedAgents);
+    const handleToggleActiveAgent = async (agentId) => {
+        try {
+            // Em uma implementação real, você faria uma chamada à API para atualizar o status do agente
+            // await fetch(`/api/agents/${agentId}/toggle-status`, { method: 'PUT' });
+            
+            // Atualizando localmente para refletir a mudança
+            const updatedAgents = agents.map(agent => {
+                if (agent.id === agentId) {
+                    return { ...agent, active: !agent.active };
+                }
+                return agent;
+            });
+            setAgents(updatedAgents);
+        } catch (error) {
+            console.error('Erro ao alternar status do agente:', error);
+        }
     };
 
-    const handleDeleteAgent = (agentId) => {
-        const updatedAgents = agents.filter(agent => agent.id !== agentId);
-        setAgents(updatedAgents);
+    const handleDeleteAgent = async (agentId) => {
+        try {
+            // Em uma implementação real, você faria uma chamada à API para excluir o agente
+            // await fetch(`/api/agents/${agentId}`, { method: 'DELETE' });
+            
+            // Atualizando localmente para refletir a mudança
+            const updatedAgents = agents.filter(agent => agent.id !== agentId);
+            setAgents(updatedAgents);
+        } catch (error) {
+            console.error('Erro ao excluir agente:', error);
+        }
     };
 
     const handleCreateNewAgent = () => {
@@ -104,7 +138,7 @@ const Agents = () => {
                         Create New Agent
                     </Button>
                 </Box>
-                
+
                 <Grid container spacing={2}>
                     <Grid item xs={12} md={6}>
                         <TextField
