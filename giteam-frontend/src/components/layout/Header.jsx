@@ -1,5 +1,5 @@
 // components/layout/Header.jsx
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
     AppBar,
     Toolbar,
@@ -21,16 +21,16 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import LanguageIcon from '@mui/icons-material/Language';
 import { ThemeContext } from './Layout';
-import LanguageSwitcher from './LanguageSwitcher';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const Header = ({ title, toggleDrawer, user }) => {
     const theme = useTheme();
     const colorMode = React.useContext(ThemeContext);
+    const { language, changeLanguage } = useLanguage(); // Hook do contexto de idioma
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const isDarkMode = theme.palette.mode === 'dark';
     
     const [anchorEl, setAnchorEl] = useState(null);
-    const [currentLanguage, setCurrentLanguage] = useState('pt'); // Estado para idioma
     const open = Boolean(anchorEl);
     
     const paperBgColor = isDarkMode ? '#161b22' : '#ffffff';
@@ -52,15 +52,14 @@ const Header = ({ title, toggleDrawer, user }) => {
     };
 
     const handleLanguageToggle = () => {
-        // Alterna entre português e inglês (ou outros idiomas conforme necessário)
-        const newLanguage = currentLanguage === 'pt' ? 'en' : 'pt';
-        setCurrentLanguage(newLanguage);
-        // Aqui você pode adicionar a lógica para trocar o idioma da aplicação
+        // Alterna entre português e inglês usando o contexto
+        const newLanguage = language === 'pt-BR' ? 'en-US' : 'pt-BR';
+        changeLanguage(newLanguage);
         handleClose();
     };
 
     const getLanguageText = () => {
-        return currentLanguage === 'pt' ? 'Português' : 'English';
+        return language === 'pt-BR' ? 'Português' : 'English';
     };
 
     console.log('Header user:', user); // Debugging line
