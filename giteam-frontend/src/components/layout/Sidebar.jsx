@@ -51,7 +51,6 @@ const Sidebar = ({ drawerOpen, toggleDrawer }) => {
         { text: t('repositories'), icon: <FolderIcon />, path: '/repositories' },
         { text: t('operationHistory'), icon: <HistoryIcon />, path: '/operations' },
         { text: t('costs'), icon: <PaidIcon />, path: '/costs' },
-        { text: t('settings'), icon: <SettingsIcon />, path: '/settings' },
     ];
 
     const handleNavigation = (path) => {
