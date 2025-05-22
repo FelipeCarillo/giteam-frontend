@@ -1,5 +1,6 @@
 // components/layout/Header.jsx
 import React, { useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     AppBar,
     Toolbar,
@@ -20,13 +21,16 @@ import MenuIcon from '@mui/icons-material/Menu';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import LanguageIcon from '@mui/icons-material/Language';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { ThemeContext } from './Layout';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { logout } from '../../services/auth';
 
 const Header = ({ title, toggleDrawer, user }) => {
     const theme = useTheme();
+    const navigate = useNavigate();
     const colorMode = React.useContext(ThemeContext);
-    const { language, changeLanguage } = useLanguage(); // Hook do contexto de idioma
+    const { language, changeLanguage, t } = useLanguage(); // Adicionando t para traduções
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const isDarkMode = theme.palette.mode === 'dark';
     
@@ -58,8 +62,32 @@ const Header = ({ title, toggleDrawer, user }) => {
         handleClose();
     };
 
+    const handleSignOut = () => {
+        logout();
+        navigate('/');
+        handleClose();
+    };
+
     const getLanguageText = () => {
         return language === 'pt-BR' ? 'Português' : 'English';
+    };
+
+    const getThemeText = () => {
+        return theme.palette.mode === 'dark' 
+            ? (language === 'pt-BR' ? 'Escuro' : 'Dark')
+            : (language === 'pt-BR' ? 'Claro' : 'Light');
+    };
+
+    const getLanguageLabel = () => {
+        return language === 'pt-BR' ? 'Idioma' : 'Language';
+    };
+
+    const getThemeLabel = () => {
+        return language === 'pt-BR' ? 'Tema' : 'Theme';
+    };
+
+    const getSignOutLabel = () => {
+        return t ? t('signOut') : (language === 'pt-BR' ? 'Sair' : 'Sign Out');
     };
 
     console.log('Header user:', user); // Debugging line
@@ -133,15 +161,13 @@ const Header = ({ title, toggleDrawer, user }) => {
                             <ListItemIcon>
                                 <LanguageIcon fontSize="small" sx={{ color: primaryTextColor }} />
                             </ListItemIcon>
-                            <ListItemText primary="Idioma" />
+                            <ListItemText primary={getLanguageLabel()} />
                             <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center' }}>
                                 <Typography variant="body2" sx={{ color: secondaryTextColor }}>
                                     {getLanguageText()}
                                 </Typography>
                             </Box>
                         </MenuItem>
-                        
-                        <Divider sx={{ borderColor: borderColor }} />
                         
                         <MenuItem onClick={handleThemeToggle}>
                             <ListItemIcon>
@@ -150,12 +176,31 @@ const Header = ({ title, toggleDrawer, user }) => {
                                     <Brightness4Icon fontSize="small" sx={{ color: primaryTextColor }} />
                                 }
                             </ListItemIcon>
-                            <ListItemText primary="Tema" />
+                            <ListItemText primary={getThemeLabel()} />
                             <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center' }}>
                                 <Typography variant="body2" sx={{ color: secondaryTextColor }}>
-                                    {theme.palette.mode === 'dark' ? 'Escuro' : 'Claro'}
+                                    {getThemeText()}
                                 </Typography>
                             </Box>
+                        </MenuItem>
+
+                        <Divider sx={{ borderColor: borderColor }} />
+                        
+                        <MenuItem 
+                            onClick={handleSignOut}
+                            sx={{
+                                color: theme.palette.error.main,
+                                '&:hover': {
+                                    backgroundColor: isDarkMode 
+                                        ? 'rgba(248, 81, 73, 0.08)' 
+                                        : 'rgba(248, 81, 73, 0.04)',
+                                },
+                            }}
+                        >
+                            <ListItemIcon>
+                                <LogoutIcon fontSize="small" sx={{ color: theme.palette.error.main }} />
+                            </ListItemIcon>
+                            <ListItemText primary={getSignOutLabel()} />
                         </MenuItem>
                     </Menu>
                 </Box>

@@ -9,7 +9,6 @@ import {
     ListItemIcon,
     ListItemText,
     Divider,
-    Button,
     IconButton,
     Typography,
     useTheme,
@@ -21,9 +20,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import FolderIcon from '@mui/icons-material/Folder';
 import PaidIcon from '@mui/icons-material/Paid';
 import HistoryIcon from '@mui/icons-material/History';
-import LogoutIcon from '@mui/icons-material/Logout';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { logout } from '../../services/auth';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 const Sidebar = ({ drawerOpen, toggleDrawer }) => {
@@ -39,11 +36,6 @@ const Sidebar = ({ drawerOpen, toggleDrawer }) => {
     const secondaryTextColor = isDarkMode ? '#8b949e' : '#57606a';
     const borderColor = isDarkMode ? '#30363d' : 'rgba(0,0,0,0.08)';
     const drawerWidth = 240;
-
-    const signOut = () => {
-        logout();
-        navigate('/');
-    }
 
     const menuItems = [
         { text: t('dashboard'), icon: <DashboardIcon />, path: '/dashboard' },
@@ -132,27 +124,6 @@ const Sidebar = ({ drawerOpen, toggleDrawer }) => {
                     );
                 })}
             </List>
-            <Divider sx={{ borderColor }} />
-            <Box sx={{ mt: 'auto', p: 2 }}>
-                <Button
-                    variant="outlined"
-                    fullWidth
-                    onClick={() => signOut()}
-                    color="error"
-                    startIcon={<LogoutIcon />}
-                    sx={{
-                        borderColor: borderColor,
-                        color: secondaryTextColor,
-                        '&:hover': {
-                            borderColor: primaryColor,
-                            backgroundColor: isDarkMode ? 'rgba(46, 164, 79, 0.1)' : 'rgba(46, 164, 79, 0.05)',
-                        },
-                        textTransform: 'none',
-                    }}
-                >
-                    {t('signOut')}
-                </Button>
-            </Box>
         </Drawer>
     );
 };
