@@ -17,7 +17,7 @@ import { minimalAgentOptions } from '../services/mockData'; // Pode manter tempo
 
 function Dashboard() {
     const navigate = useNavigate();
-    const { t } = useLanguage();
+    const { t, language } = useLanguage(); // Adiciona language para forçar re-render
 
     const [repositories, setRepositories] = useState([]);
     const [operations, setOperations] = useState([]);
@@ -162,10 +162,10 @@ function Dashboard() {
                     {t('recentOperations')}
                 </Typography>
                 <OperationsList
+                    key={language} // Força re-render quando o idioma muda
                     operations={recentOperations}
                     showViewAll={true}
                     onViewAll={handleViewAllOperations}
-                    viewAllLabel={t('viewAllOperations')}
                 />
             </Box>
         </Layout>

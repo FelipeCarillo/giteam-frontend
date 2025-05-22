@@ -34,12 +34,14 @@ import CodeIcon from '@mui/icons-material/Code';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import Layout from '../components/layout/Layout';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const AgentCreate = () => {
     const theme = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
     const isDarkMode = theme.palette.mode === 'dark';
+    const { t } = useLanguage();
     
     // Pegue o repositoryId do estado da localização, se disponível
     const initialRepoId = location.state?.repositoryId || null;
@@ -67,7 +69,7 @@ const AgentCreate = () => {
     const secondaryTextColor = isDarkMode ? '#8b949e' : '#57606a';
 
     // Passos para o stepper
-    const steps = ['Repositório e Função', 'Modelo e Configuração', 'Revisão'];
+    const steps = [t('repoAndFunction'), t('modelAndConfig'), t('review')];
 
     // Carrega dados da API quando o componente montar
     useEffect(() => {
@@ -92,6 +94,15 @@ const AgentCreate = () => {
         }
     }, [agentData.repository]);
 
+    // Efeito para atualizar as traduções quando o idioma muda
+    useEffect(() => {
+        fetchAgentFunctions();
+        fetchResponseLengthOptions();
+        if (agentData.repository) {
+            fetchAvailableFunctionsForRepository(agentData.repository);
+        }
+    }, [t]); // Recarrega quando a função de tradução muda
+
     // Funções para buscar dados que substituiriam o mockData
     const fetchRepositories = async () => {
         // Em uma implementação real, isso seria uma chamada à API
@@ -106,44 +117,44 @@ const AgentCreate = () => {
 
     const fetchAgentFunctions = async () => {
         // Em uma implementação real, isso seria uma chamada à API
-        // Por enquanto, vamos simular com dados básicos
+        // Agora usando as traduções do contexto
         setAvailableFunctions([
             {
                 id: 'PR Review',
-                title: 'PR Review Agent',
-                description: 'Revisa Pull Requests automaticamente, verificando a qualidade do código, possíveis bugs, problemas de segurança e aderência às boas práticas.'
+                title: t('prReviewAgent'),
+                description: t('prReviewDesc')
             },
             {
                 id: 'Issue Resolution',
-                title: 'Issue Resolution Agent',
-                description: 'Analisa problemas reportados e fornece possíveis soluções ou passos para debugging.'
+                title: t('issueResolutionAgent'),
+                description: t('issueResolutionDesc')
             },
             {
                 id: 'Both',
-                title: 'Full-Service Agent',
-                description: 'Combina as capacidades de PR Review e Issue Resolution em um único agente.'
+                title: t('fullServiceAgent'),
+                description: t('fullServiceDesc')
             }
         ]);
     };
 
     const fetchAvailableFunctionsForRepository = async (repositoryId) => {
         // Em uma implementação real, isso seria uma chamada à API com o ID do repositório
-        // Por enquanto, vamos simular com todas as funções disponíveis
+        // Agora usando as traduções do contexto
         setAvailableFunctions([
             {
                 id: 'PR Review',
-                title: 'PR Review Agent',
-                description: 'Revisa Pull Requests automaticamente, verificando a qualidade do código, possíveis bugs, problemas de segurança e aderência às boas práticas.'
+                title: t('prReviewAgent'),
+                description: t('prReviewDesc')
             },
             {
                 id: 'Issue Resolution',
-                title: 'Issue Resolution Agent',
-                description: 'Analisa problemas reportados e fornece possíveis soluções ou passos para debugging.'
+                title: t('issueResolutionAgent'),
+                description: t('issueResolutionDesc')
             },
             {
                 id: 'Both',
-                title: 'Full-Service Agent',
-                description: 'Combina as capacidades de PR Review e Issue Resolution em um único agente.'
+                title: t('fullServiceAgent'),
+                description: t('fullServiceDesc')
             }
         ]);
     };
@@ -160,23 +171,24 @@ const AgentCreate = () => {
 
     const fetchResponseLengthOptions = async () => {
         // Em uma implementação real, isso seria uma chamada à API
+        // Agora usando as traduções do contexto
         setResponseLengthOptions([
             {
                 id: 'concise',
-                title: 'Conciso',
-                description: 'Respostas curtas e diretas (40% dos tokens máximos)',
+                title: t('concise'),
+                description: t('conciseDesc'),
                 tokenPercentage: 0.4
             },
             {
                 id: 'medium',
-                title: 'Médio',
-                description: 'Respostas com nível médio de detalhes (60% dos tokens máximos)',
+                title: t('medium'),
+                description: t('mediumDesc'),
                 tokenPercentage: 0.6
             },
             {
                 id: 'detailed',
-                title: 'Detalhado',
-                description: 'Respostas completas e detalhadas (100% dos tokens máximos)',
+                title: t('detailed'),
+                description: t('detailedDesc'),
                 tokenPercentage: 1.0
             }
         ]);
@@ -185,7 +197,7 @@ const AgentCreate = () => {
     // Função para obter o nome do repositório pelo ID
     const getRepositoryNameById = (repoId) => {
         const repo = repositories.find(r => r.id === repoId);
-        return repo ? repo.name : 'Não selecionado';
+        return repo ? repo.name : t('notSelected');
     };
 
     // Handle form changes
@@ -257,22 +269,22 @@ const AgentCreate = () => {
                 return (
                     <>
                         <Typography variant="h6" sx={{ mb: 1, color: primaryTextColor }}>
-                            Selecione o Repositório e a Função do Agente
+                            {t('selectRepoAndFunction')}
                         </Typography>
                         <Typography variant="body2" sx={{ mb: 3, color: secondaryTextColor }}>
-                            Um repositório pode ter até 2 agentes com funções diferentes, ou 1 agente "Full-Service"
+                            {t('repoAgentLimit')}
                         </Typography>
                         
                         <Grid container spacing={3}>
                             <Grid item xs={12}>
                                 <FormControl fullWidth>
-                                    <InputLabel>Repositório</InputLabel>
+                                    <InputLabel>{t('repository')}</InputLabel>
                                     <Select
                                         value={agentData.repository || ''}
                                         onChange={handleChange('repository')}
-                                        label="Repositório"
+                                        label={t('repository')}
                                     >
-                                        <MenuItem value="">Selecione um repositório</MenuItem>
+                                        <MenuItem value="">{t('selectRepository')}</MenuItem>
                                         {repositories.map(repo => (
                                             <MenuItem 
                                                 key={repo.id} 
@@ -287,7 +299,7 @@ const AgentCreate = () => {
                             
                             <Grid item xs={12}>
                                 <Typography variant="subtitle1" sx={{ mb: 2, color: primaryTextColor }}>
-                                    Selecione a função do agente:
+                                    {t('selectAgentFunction')}
                                 </Typography>
                                 
                                 <Grid container spacing={2}>
@@ -339,7 +351,7 @@ const AgentCreate = () => {
                                         sx={{ mt: 2 }}
                                         icon={<InfoIcon />}
                                     >
-                                        Este repositório já atingiu o limite de agentes.
+                                        {t('repositoryLimitReached')}
                                     </Alert>
                                 )}
                             </Grid>
@@ -351,24 +363,24 @@ const AgentCreate = () => {
                 return (
                     <>
                         <Typography variant="h6" sx={{ mb: 3, color: primaryTextColor }}>
-                            Configure seu Agente
+                            {t('configureYourAgent')}
                         </Typography>
                         
                         <Grid container spacing={3}>
                             <Grid item xs={12}>
                                 <TextField
                                     fullWidth
-                                    label="Nome do Agente"
+                                    label={t('agentName')}
                                     value={agentData.name}
                                     onChange={handleChange('name')}
-                                    placeholder="Ex.: CodeReviewer, IssueHelper"
-                                    helperText="Escolha um nome descritivo para seu agente"
+                                    placeholder={t('agentNamePlaceholder')}
+                                    helperText={t('chooseDescriptiveName')}
                                 />
                             </Grid>
                             
                             <Grid item xs={12}>
                                 <Typography variant="subtitle1" sx={{ mb: 2, color: primaryTextColor }}>
-                                    Selecione o modelo AI:
+                                    {t('selectAIModel')}
                                 </Typography>
                                 
                                 <Grid container spacing={2}>
@@ -405,13 +417,13 @@ const AgentCreate = () => {
                                                     {model.name}
                                                 </Typography>
                                                 <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 1 }}>
-                                                    Provedor: {model.provider}
+                                                    {t('provider', { name: model.provider })}
                                                 </Typography>
                                                 <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 2 }}>
-                                                    Custo: ${model.costPerToken.toFixed(5)} por token
+                                                    {t('cost', { cost: model.costPerToken.toFixed(5) })}
                                                 </Typography>
                                                 <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 1 }}>
-                                                    Máx. tokens: {model.maxTokens.toLocaleString()}
+                                                    {t('maxTokens', { count: model.maxTokens.toLocaleString() })}
                                                 </Typography>
                                                 
                                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -453,9 +465,9 @@ const AgentCreate = () => {
                                         renderInput={(params) => (
                                             <TextField
                                                 {...params}
-                                                label="Branches Monitoradas"
-                                                placeholder="Adicione o nome da branch"
-                                                helperText="Adicione as branches que você deseja que este agente monitore"
+                                                label={t('monitoredBranches')}
+                                                placeholder={t('addBranchName')}
+                                                helperText={t('branchesToMonitor')}
                                             />
                                         )}
                                     />
@@ -465,7 +477,7 @@ const AgentCreate = () => {
                             <Grid item xs={12}>
                                 <FormControl component="fieldset">
                                     <FormLabel component="legend" sx={{ color: primaryTextColor }}>
-                                        Nível de Detalhamento da Resposta
+                                        {t('responseDetailLevel')}
                                     </FormLabel>
                                     <RadioGroup
                                         value={agentData.responseLength}
@@ -509,7 +521,7 @@ const AgentCreate = () => {
                 return (
                     <>
                         <Typography variant="h6" sx={{ mb: 3, color: primaryTextColor }}>
-                            Revise a Configuração do Agente
+                            {t('reviewAgentConfig')}
                         </Typography>
                         
                         <Grid container spacing={2}>
@@ -526,7 +538,7 @@ const AgentCreate = () => {
                                     <Grid container spacing={2}>
                                         <Grid item xs={6}>
                                             <Typography variant="subtitle2" sx={{ color: secondaryTextColor }}>
-                                                Nome do Agente
+                                                {t('agentName')}
                                             </Typography>
                                             <Typography variant="body1" sx={{ color: primaryTextColor, mb: 2 }}>
                                                 {agentData.name}
@@ -535,16 +547,16 @@ const AgentCreate = () => {
                                         
                                         <Grid item xs={6}>
                                             <Typography variant="subtitle2" sx={{ color: secondaryTextColor }}>
-                                                Função
+                                                {t('function')}
                                             </Typography>
                                             <Typography variant="body1" sx={{ color: primaryTextColor, mb: 2 }}>
-                                                {availableFunctions.find(f => f.id === agentData.function)?.title || 'Não selecionada'}
+                                                {availableFunctions.find(f => f.id === agentData.function)?.title || t('notSelected')}
                                             </Typography>
                                         </Grid>
                                         
                                         <Grid item xs={6}>
                                             <Typography variant="subtitle2" sx={{ color: secondaryTextColor }}>
-                                                Repositório
+                                                {t('repository')}
                                             </Typography>
                                             <Typography variant="body1" sx={{ color: primaryTextColor, mb: 2 }}>
                                                 {getRepositoryNameById(agentData.repository)}
@@ -553,35 +565,35 @@ const AgentCreate = () => {
                                         
                                         <Grid item xs={6}>
                                             <Typography variant="subtitle2" sx={{ color: secondaryTextColor }}>
-                                                Modelo
+                                                {t('model')}
                                             </Typography>
                                             <Typography variant="body1" sx={{ color: primaryTextColor, mb: 2 }}>
-                                                {availableModels.find(m => m.id === agentData.model)?.name || 'Não selecionado'}
+                                                {availableModels.find(m => m.id === agentData.model)?.name || t('notSelected')}
                                             </Typography>
                                         </Grid>
                                         
                                         <Grid item xs={6}>
                                             <Typography variant="subtitle2" sx={{ color: secondaryTextColor }}>
-                                                Detalhamento da Resposta
+                                                {t('responseDetail')}
                                             </Typography>
                                             <Typography variant="body1" sx={{ color: primaryTextColor, mb: 2 }}>
-                                                {selectedResponseLength?.title || 'Médio'}
+                                                {selectedResponseLength?.title || t('medium')}
                                             </Typography>
                                         </Grid>
                                         
                                         <Grid item xs={6}>
                                             <Typography variant="subtitle2" sx={{ color: secondaryTextColor }}>
-                                                Tokens Estimados
+                                                {t('estimatedTokens')}
                                             </Typography>
                                             <Typography variant="body1" sx={{ color: primaryTextColor, mb: 2 }}>
-                                                {estimatedTokens.toLocaleString()} de {selectedModel?.maxTokens.toLocaleString() || 0}
+                                                {estimatedTokens.toLocaleString()} {t('of')} {selectedModel?.maxTokens.toLocaleString() || 0}
                                             </Typography>
                                         </Grid>
                                         
                                         {(agentData.function === 'PR Review' || agentData.function === 'Both') && (
                                             <Grid item xs={12}>
                                                 <Typography variant="subtitle2" sx={{ color: secondaryTextColor }}>
-                                                    Branches Monitoradas
+                                                    {t('monitoredBranches')}
                                                 </Typography>
                                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1, mb: 2 }}>
                                                     {agentData.branches.map(branch => (
@@ -604,14 +616,14 @@ const AgentCreate = () => {
                                     
                                     <Box sx={{ mt: 2 }}>
                                         <Typography variant="subtitle2" sx={{ color: secondaryTextColor, mb: 1 }}>
-                                            Custo estimado para os próximos 30 dias
+                                            {t('estimatedCost30Days')}
                                         </Typography>
                                         
                                         <Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 500 }}>
                                             ${((selectedModel?.costPerToken || 0) * estimatedTokens * 30).toFixed(2)}
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: secondaryTextColor, display: 'block' }}>
-                                            Baseado em uma média de 1 operação por dia
+                                            {t('basedOnAverage')}
                                         </Typography>
                                     </Box>
                                 </Paper>
@@ -625,7 +637,7 @@ const AgentCreate = () => {
                                         '& .MuiAlert-message': { color: 'inherit' }
                                     }}
                                 >
-                                    Seu agente ficará ativo imediatamente após a criação. Você pode pausá-lo a qualquer momento na página de Agentes.
+                                    {t('agentActiveInfo')}
                                 </Alert>
                             </Grid>
                         </Grid>
@@ -638,7 +650,7 @@ const AgentCreate = () => {
     };
 
     return (
-        <Layout title="Criar Novo Agente">
+        <Layout title={t('createNewAgentTitle')}>
             <Box sx={{ mb: 4 }}>
                 <Button 
                     startIcon={<ArrowBackIcon />} 
@@ -649,7 +661,7 @@ const AgentCreate = () => {
                         '&:hover': { color: primaryTextColor }
                     }}
                 >
-                    Voltar
+                    {t('back')}
                 </Button>
                 
                 <Paper 
@@ -679,7 +691,7 @@ const AgentCreate = () => {
                             onClick={handleBack}
                             sx={{ mr: 1 }}
                         >
-                            Voltar
+                            {t('back')}
                         </Button>
                         <Box>
                             <Button
@@ -687,7 +699,7 @@ const AgentCreate = () => {
                                 onClick={handleCancel}
                                 sx={{ mr: 1 }}
                             >
-                                Cancelar
+                                {t('cancel')}
                             </Button>
                             {activeStep === steps.length - 1 ? (
                                 <Button
@@ -695,7 +707,7 @@ const AgentCreate = () => {
                                     onClick={handleSubmit}
                                     disabled={!isStepValid()}
                                 >
-                                    Criar Agente
+                                    {t('createAgent')}
                                 </Button>
                             ) : (
                                 <Button
@@ -703,7 +715,7 @@ const AgentCreate = () => {
                                     onClick={handleNext}
                                     disabled={!isStepValid()}
                                 >
-                                    Próximo
+                                    {t('next')}
                                 </Button>
                             )}
                         </Box>

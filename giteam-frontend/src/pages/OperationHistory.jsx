@@ -18,12 +18,14 @@ import SearchIcon from '@mui/icons-material/Search';
 import Layout from '../components/layout/Layout';
 import OperationsList from '../components/operations/OperationsList';
 import { operations } from '../services/mockData';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const ITEMS_PER_PAGE = 5;
 
 const OperationHistory = () => {
     const theme = useTheme();
     const isDarkMode = theme.palette.mode === 'dark';
+    const { t } = useLanguage();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterAgent, setFilterAgent] = useState('all');
@@ -75,7 +77,7 @@ const OperationHistory = () => {
     const totalCost = filteredOperations.reduce((sum, op) => sum + op.cost, 0);
 
     return (
-        <Layout title="Operation History">
+        <Layout title={t('operationHistoryTitle')}>
             {/* Filters and Search */}
             <Paper
                 elevation={0}
@@ -89,10 +91,10 @@ const OperationHistory = () => {
             >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 3 }}>
                     <Typography variant="h6" fontWeight="500" sx={{ color: primaryTextColor }}>
-                        Agent Operations
+                        {t('operationHistoryAgent')}
                     </Typography>
                     <Typography variant="body1" sx={{ color: primaryTextColor }}>
-                        Total Cost: <strong>${totalCost.toFixed(2)}</strong>
+                        {t('operationCost')}: <strong>${totalCost.toFixed(2)}</strong>
                     </Typography>
                 </Box>
 
@@ -100,7 +102,7 @@ const OperationHistory = () => {
                     <Grid item xs={12} md={6}>
                         <TextField
                             fullWidth
-                            placeholder="Search in operations or repositories"
+                            placeholder={t('operationSearch')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             variant="outlined"
@@ -116,13 +118,13 @@ const OperationHistory = () => {
                     </Grid>
                     <Grid item xs={6} md={3}>
                         <FormControl fullWidth size="small">
-                            <InputLabel>Agent</InputLabel>
+                            <InputLabel>{t('operationAgent')}</InputLabel>
                             <Select
                                 value={filterAgent}
                                 onChange={(e) => setFilterAgent(e.target.value)}
-                                label="Agent"
+                                label={t('operationAgent')}
                             >
-                                <MenuItem value="all">All Agents</MenuItem>
+                                <MenuItem value="all">{t('operationAllAgents')}</MenuItem>
                                 {uniqueAgents.map(agent => (
                                     <MenuItem key={agent} value={agent}>{agent}</MenuItem>
                                 ))}
@@ -131,15 +133,15 @@ const OperationHistory = () => {
                     </Grid>
                     <Grid item xs={6} md={3}>
                         <FormControl fullWidth size="small">
-                            <InputLabel>Operation Type</InputLabel>
+                            <InputLabel>{t('operationType')}</InputLabel>
                             <Select
                                 value={filterType}
                                 onChange={(e) => setFilterType(e.target.value)}
-                                label="Operation Type"
+                                label={t('operationType')}
                             >
-                                <MenuItem value="all">All Types</MenuItem>
-                                <MenuItem value="PR">PR Reviews</MenuItem>
-                                <MenuItem value="Issue">Issue Resolutions</MenuItem>
+                                <MenuItem value="all">{t('operationAllTypes')}</MenuItem>
+                                <MenuItem value="PR">{t('prReviews', { count: '' }).replace(': ', '')}</MenuItem>
+                                <MenuItem value="Issue">{t('issueResolutions', { count: '' }).replace(': ', '')}</MenuItem>
                             </Select>
                         </FormControl>
                     </Grid>
@@ -159,7 +161,7 @@ const OperationHistory = () => {
                     }}
                 >
                     <Typography variant="body1" sx={{ color: primaryTextColor }}>
-                        No operations match your filters.
+                        {t('operationSearchResults')}
                     </Typography>
                 </Paper>
             ) : (

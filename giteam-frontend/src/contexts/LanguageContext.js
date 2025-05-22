@@ -111,6 +111,17 @@ export const translations = {
         activateAgent: 'Ativar agente',
         deleteAgent: 'Excluir agente',
 
+        //Operation History
+        operationHistoryTitle: 'Histórico de Operações',
+        operationHistoryAgent: 'Operações de Agentes',
+        operationSearch: 'Pesquisar em operações ou repositórios',
+        operationAgent: 'Agentes',
+        operationAllAgents: 'Todos Agentes',
+        operationType: 'Tipo de Operação',
+        operationAllTypes: 'Todos os Tipos',
+        operationCost: 'Custo Total',
+        operationSearchResults: 'Nenhuma operação corresponde aos seus filtros.',
+
         // Common
         function: 'Função',
         in: 'em',
@@ -245,6 +256,17 @@ export const translations = {
         deactivateAgent: 'Deactivate agent',
         activateAgent: 'Activate agent',
         deleteAgent: 'Delete agent',
+
+        //Operation History
+        operationHistoryTitle: 'Operation History',
+        operationHistoryAgent: 'Agent Operations',
+        operationSearch: 'Search in operations or repositories',
+        operationAgent: 'Agent',
+        operationAllAgents: 'All Agents',
+        operationType: 'Operation Type',
+        operationAllTypes: 'All Types',
+        operationCost: 'Total Cost',
+        operationSearchResults: 'No operations match your filters.',
 
         // Common
         function: 'Function',

@@ -3,9 +3,11 @@ import React from 'react';
 import { Box, Paper, Typography, Divider, Button, Avatar, useTheme } from '@mui/material';
 import CodeIcon from '@mui/icons-material/Code';
 import BugReportIcon from '@mui/icons-material/BugReport';
+import { useLanguage } from '../../contexts/LanguageContext';
 
-const OperationsList = ({ operations, showViewAll = true, maxItems = null, onViewAll = () => { } }) => {
+const OperationsList = ({ operations, showViewAll = true, maxItems = null, onViewAll = () => { }, viewAllLabel = null }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const isDarkMode = theme.palette.mode === 'dark';
 
     const primaryColor = theme.palette.primary.main;
@@ -58,7 +60,7 @@ const OperationsList = ({ operations, showViewAll = true, maxItems = null, onVie
                                     {operation.agentName}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: secondaryTextColor }}>
-                                    in {operation.repository}
+                                    {t('in')} {operation.repository}
                                 </Typography>
                             </Box>
                             <Typography variant="body2" sx={{ color: primaryTextColor }}>
@@ -88,7 +90,7 @@ const OperationsList = ({ operations, showViewAll = true, maxItems = null, onVie
                             textTransform: 'none',
                         }}
                     >
-                        View All Operations
+                        {viewAllLabel || t('viewAllOperations')}
                     </Button>
                 </Box>
             )}
