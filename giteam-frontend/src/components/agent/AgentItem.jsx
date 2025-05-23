@@ -7,7 +7,6 @@ import {
     Chip,
     Avatar,
     IconButton,
-    LinearProgress,
     useTheme,
     Tooltip
 } from '@mui/material';
@@ -25,14 +24,59 @@ const AgentItem = ({ agent, repository, onToggleActive, onDelete }) => {
     const primaryTextColor = isDarkMode ? '#f0f6fc' : '#24292e';
     const secondaryTextColor = isDarkMode ? '#8b949e' : '#57606a';
 
+    // ✅ Função para formatação segura de números
+    const formatCurrency = (value) => {
+        if (value === null || value === undefined || isNaN(value)) {
+            return '0.00';
+        }
+        return Number(value).toFixed(2);
+    };
+
+    const formatNumber = (value) => {
+        if (value === null || value === undefined || isNaN(value)) {
+            return '0';
+        }
+        return Number(value).toLocaleString();
+    };
+
+    // ✅ Dados seguros do agente com valores padrão
+    const safeAgent = {
+        id: null,
+        name: 'Unknown Agent',
+        active: false,
+        function: 'unknown',
+        model: 'unknown',
+        responseLength: 'medium',
+        costMonth: 0,
+        branches: [],
+        ...agent // Override com os valores reais se existirem
+    };
+
     // Encontrar detalhes do modelo
-    const modelDetails = availableModels.find(m => m.id === agent.model);
+    const modelDetails = availableModels?.find(m => m.id === safeAgent.model) || {
+        name: safeAgent.model,
+        maxTokens: 4000
+    };
+
     // Encontrar detalhes do comprimento de resposta
-    const responseLengthDetails = responseLengthOptions.find(r => r.id === agent.responseLength);
-    // Calcular tokens utilizados
+    const responseLengthDetails = responseLengthOptions?.find(r => r.id === safeAgent.responseLength) || {
+        title: 'Médio',
+        tokenPercentage: 0.6
+    };
+
+    // Calcular tokens utilizados com valores seguros
     const tokensUsed = modelDetails
         ? Math.round(modelDetails.maxTokens * (responseLengthDetails?.tokenPercentage || 0.6))
         : 0;
+
+    // Função segura para obter título da função
+    const getFunctionTitle = (functionKey) => {
+        if (!agentFunctions || !functionKey) return functionKey || 'Unknown';
+        return agentFunctions[functionKey]?.title || functionKey;
+    };
+
+    // Garantir que branches é sempre um array
+    const safeBranches = Array.isArray(safeAgent.branches) ? safeAgent.branches : [];
 
     return (
         <Box sx={{ p: 3 }}>
@@ -43,10 +87,10 @@ const AgentItem = ({ agent, repository, onToggleActive, onDelete }) => {
                             sx={{
                                 width: 40,
                                 height: 40,
-                                backgroundColor: agent.active ?
+                                backgroundColor: safeAgent.active ?
                                     (isDarkMode ? 'rgba(46, 164, 79, 0.2)' : 'rgba(46, 164, 79, 0.1)') :
                                     (isDarkMode ? 'rgba(215, 58, 73, 0.2)' : 'rgba(215, 58, 73, 0.1)'),
-                                color: agent.active ?
+                                color: safeAgent.active ?
                                     (isDarkMode ? '#7ee787' : '#2ea44f') :
                                     (isDarkMode ? '#ff7b72' : '#d73a49'),
                                 mr: 2
@@ -57,23 +101,23 @@ const AgentItem = ({ agent, repository, onToggleActive, onDelete }) => {
                         <Box>
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                 <Typography variant="subtitle1" fontWeight="500" sx={{ color: primaryTextColor, mr: 1 }}>
-                                    {agent.name}
+                                    {safeAgent.name}
                                 </Typography>
                                 <Chip
-                                    label={agent.active ? 'Ativo' : 'Inativo'}
+                                    label={safeAgent.active ? 'Ativo' : 'Inativo'}
                                     size="small"
                                     sx={{
-                                        backgroundColor: agent.active ?
+                                        backgroundColor: safeAgent.active ?
                                             (isDarkMode ? 'rgba(46, 164, 79, 0.2)' : 'rgba(46, 164, 79, 0.1)') :
                                             (isDarkMode ? 'rgba(215, 58, 73, 0.2)' : 'rgba(215, 58, 73, 0.1)'),
-                                        color: agent.active ?
+                                        color: safeAgent.active ?
                                             (isDarkMode ? '#7ee787' : '#2ea44f') :
                                             (isDarkMode ? '#ff7b72' : '#d73a49')
                                     }}
                                 />
                             </Box>
                             <Typography variant="body2" sx={{ color: secondaryTextColor, mt: 0.5 }}>
-                                {agentFunctions[agent.function]?.title || agent.function} | {modelDetails?.name || agent.model}
+                                {getFunctionTitle(safeAgent.function)} | {modelDetails?.name || safeAgent.model}
                             </Typography>
                             {repository && (
                                 <Typography variant="body2" sx={{ color: secondaryTextColor, mt: 0.5 }}>
@@ -84,15 +128,15 @@ const AgentItem = ({ agent, repository, onToggleActive, onDelete }) => {
                     </Box>
                 </Grid>
                 <Grid item xs={12} md={4}>
-                    {(agent.function === 'PR Review' || agent.function === 'Both') && agent.branches && (
+                    {(safeAgent.function === 'PR Review' || safeAgent.function === 'Both') && safeBranches.length > 0 && (
                         <Box>
                             <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 1 }}>
                                 Branches monitoradas:
                             </Typography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                {agent.branches.map(branch => (
+                                {safeBranches.map((branch, index) => (
                                     <Chip
-                                        key={branch}
+                                        key={`${branch}-${index}`}
                                         label={branch}
                                         size="small"
                                         sx={{
@@ -117,7 +161,7 @@ const AgentItem = ({ agent, repository, onToggleActive, onDelete }) => {
                                     color: isDarkMode ? '#58a6ff' : '#0366d6',
                                 }}
                             />
-                            <Tooltip title={`${tokensUsed.toLocaleString()} tokens por resposta`}>
+                            <Tooltip title={`${formatNumber(tokensUsed)} tokens por resposta`}>
                                 <IconButton size="small">
                                     <InfoOutlinedIcon fontSize="small" sx={{ color: secondaryTextColor }} />
                                 </IconButton>
@@ -132,26 +176,26 @@ const AgentItem = ({ agent, repository, onToggleActive, onDelete }) => {
                                 Custo este mês:
                             </Typography>
                             <Typography variant="subtitle1" fontWeight="500" sx={{ color: primaryTextColor, textAlign: 'right' }}>
-                                ${agent.costMonth.toFixed(2)}
+                                ${formatCurrency(safeAgent.costMonth)}
                             </Typography>
                         </Box>
                         <IconButton
                             size="small"
-                            onClick={() => onToggleActive(agent.id)}
+                            onClick={() => onToggleActive && onToggleActive(safeAgent.id)}
                             sx={{
-                                color: agent.active ?
+                                color: safeAgent.active ?
                                     (isDarkMode ? '#ff7b72' : '#d73a49') :
                                     (isDarkMode ? '#7ee787' : '#2ea44f'),
                                 border: `1px solid ${borderColor}`,
                                 marginLeft: 1
                             }}
-                            title={agent.active ? "Desativar agente" : "Ativar agente"}
+                            title={safeAgent.active ? "Desativar agente" : "Ativar agente"}
                         >
                             <PowerSettingsNewIcon fontSize="small" />
                         </IconButton>
                         <IconButton
                             size="small"
-                            onClick={() => onDelete(agent.id)}
+                            onClick={() => onDelete && onDelete(safeAgent.id)}
                             sx={{
                                 color: isDarkMode ? '#ff7b72' : '#d73a49',
                                 border: `1px solid ${borderColor}`

@@ -35,6 +35,7 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import Layout from '../components/layout/Layout';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getAvailableRepositories, getRepositoryById } from '../services/repositories'
 
 const AgentCreate = () => {
     const theme = useTheme();
@@ -103,16 +104,14 @@ const AgentCreate = () => {
         }
     }, [t]); // Recarrega quando a função de tradução muda
 
-    // Funções para buscar dados que substituiriam o mockData
+    // Funções para buscar dados da API
     const fetchRepositories = async () => {
-        // Em uma implementação real, isso seria uma chamada à API
-        // Por enquanto, vamos simular com dados vazios
-        setRepositories([
-            // Os repositórios seriam carregados da API
-            { id: 1, name: 'giteams' },
-            { id: 2, name: 'chat-question-awnser' },
-            { id: 3, name: 'apaeleilao_backend' },
-        ]);
+        try {
+            const repositories = await getAvailableRepositories();
+            setRepositories(repositories.repositories);
+        } catch (error) {
+            console.error('Error fetching repositories:', error);
+        }
     };
 
     const fetchAgentFunctions = async () => {
@@ -120,17 +119,17 @@ const AgentCreate = () => {
         // Agora usando as traduções do contexto
         setAvailableFunctions([
             {
-                id: 'PR Review',
+                id: 'pr_review',
                 title: t('prReviewAgent'),
                 description: t('prReviewDesc')
             },
             {
-                id: 'Issue Resolution',
+                id: 'issue_resolution',
                 title: t('issueResolutionAgent'),
                 description: t('issueResolutionDesc')
             },
             {
-                id: 'Both',
+                id: 'both',
                 title: t('fullServiceAgent'),
                 description: t('fullServiceDesc')
             }
@@ -138,25 +137,20 @@ const AgentCreate = () => {
     };
 
     const fetchAvailableFunctionsForRepository = async (repositoryId) => {
-        // Em uma implementação real, isso seria uma chamada à API com o ID do repositório
-        // Agora usando as traduções do contexto
-        setAvailableFunctions([
-            {
-                id: 'PR Review',
-                title: t('prReviewAgent'),
-                description: t('prReviewDesc')
-            },
-            {
-                id: 'Issue Resolution',
-                title: t('issueResolutionAgent'),
-                description: t('issueResolutionDesc')
-            },
-            {
-                id: 'Both',
-                title: t('fullServiceAgent'),
-                description: t('fullServiceDesc')
+        const repoData = repositories.find(r => r.id === repositoryId);
+        if (repoData) {
+            const repo = await getRepositoryById(repositoryId);
+            if (repo.repository) {
+                if (repo.repository.agents.length > 0) {
+                    const existingAgent = repo.repository.agents[0];
+                    if (existingAgent.function === 'Both') {
+                        setAvailableFunctions([]);
+                    } else {
+                        setAvailableFunctions(availableFunctions.filter(f => f.id !== existingAgent.function));
+                    }
+                }
             }
-        ]);
+        }
     };
 
     const fetchAvailableModels = async () => {
@@ -242,7 +236,7 @@ const AgentCreate = () => {
                 return agentData.function && agentData.repository;
             case 1: // Model and Configuration
                 return agentData.name && agentData.model && 
-                       (agentData.function !== 'PR Review' && agentData.function !== 'Both' || agentData.branches.length > 0);
+                       ((agentData.function !== 'PR Review' && agentData.function !== 'Both') || agentData.branches.length > 0);
             default:
                 return true;
         }
