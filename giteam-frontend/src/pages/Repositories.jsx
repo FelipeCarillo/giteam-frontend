@@ -1,170 +1,187 @@
-// pages/Repositories.jsx
-import React, { useState, useEffect } from 'react';
-import { 
-    Box, Typography, Paper, Button, TextField, Dialog,
-    DialogTitle, DialogContent, DialogActions,
-    InputAdornment, useTheme, Select, MenuItem,
-    FormControl, InputLabel, CircularProgress
+// src/pages/Repositories.jsx
+import React, { useState, useEffect, useCallback } from 'react'; // CORRIGIDO AQUI
+import {
+    Box, Typography, TextField, Grid, CircularProgress, InputAdornment, Button,
+    Modal, List, ListItem, ListItemButton, ListItemText, Paper, IconButton, Alert
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
-import GitHubIcon from '@mui/icons-material/GitHub';
-
+import CloseIcon from '@mui/icons-material/Close';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import RepositoryCard from '../components/repository/RepositoryCard';
+import { api } from '../services/api';
+import { useLanguage } from '../contexts/LanguageContext';
 
-const Repositories = () => {
-    const theme = useTheme();
-    const navigate = useNavigate();
-    const isDarkMode = theme.palette.mode === 'dark';
+const modalStyle = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '90%',
+    maxWidth: 600,
+    bgcolor: 'background.paper',
+    boxShadow: 24,
+    p: 4,
+    borderRadius: 2,
+    maxHeight: '80vh',
+    display: 'flex',
+    flexDirection: 'column'
+};
 
+function Repositories() {
     const [repositories, setRepositories] = useState([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [selectedRepo, setSelectedRepo] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [showAddModal, setShowAddModal] = useState(false);
     const [githubRepos, setGithubRepos] = useState([]);
     const [loadingGithubRepos, setLoadingGithubRepos] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [selectedGithubRepo, setSelectedGithubRepo] = useState(null);
+    const [error, setError] = useState('');
 
-    const borderColor = isDarkMode ? '#30363d' : 'rgba(0,0,0,0.08)';
-    const paperBgColor = isDarkMode ? '#161b22' : '#ffffff';
-    const primaryTextColor = isDarkMode ? '#f0f6fc' : '#24292e';
+    const { t } = useLanguage();
+    const navigate = useNavigate();
 
-    // 🔄 Fetch repositories from API
-    useEffect(() => {
-        const fetchRepositories = async () => {
-            try {
-                const res = await fetch('/api/repositories');
-                const data = await res.json();
-                setRepositories(data);
-            } catch (error) {
-                console.error('Erro ao buscar repositórios:', error);
-            } finally {
-                setLoading(false);
+    const fetchRepositories = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await api.get('/api/repositories');
+            if (Array.isArray(response.data)) {
+                setRepositories(response.data);
+            } else {
+                console.error('/api/repositories não retornou um array:', response.data);
+                setRepositories([]);
             }
-        };
-        fetchRepositories();
-    }, []);
+        } catch (err) {
+            console.error('Erro ao buscar repositórios adicionados:', err.response || err.message);
+            setError(t('error_fetching_repositories'));
+            setRepositories([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [t]);
 
-    // 🔄 Fetch GitHub repositories when dialog opens
+    useEffect(() => {
+        fetchRepositories();
+    }, [fetchRepositories]);
+
     const fetchGithubRepositories = async () => {
         setLoadingGithubRepos(true);
+        setSelectedGithubRepo(null);
+        setError('');
         try {
-            const res = await fetch('/api/github/repositories');
-            const data = await res.json();
-            setGithubRepos(data);
-        } catch (error) {
-            console.error('Erro ao buscar repositórios do GitHub:', error);
+             const response = await api.get('/api/repositories/available'); // CONFIRME ESTE ENDPOINT
+             if (response.data && Array.isArray(response.data.repositories)) {
+                setGithubRepos(response.data.repositories); // <--- ACESSA A CHAVE CORRETA
+            } else {
+                console.error('API de repositórios do GitHub não retornou um array na chave "repositories" ou a estrutura é inesperada:', response.data);
+                setError(t('error_fetching_github_repos_format'));
+                setGithubRepos([]);
+            }
+        } catch (err) {
+            console.error('Erro ao buscar repositórios do GitHub:', err.response || err.message);
+            setError(t('error_fetching_github_repos'));
             setGithubRepos([]);
         } finally {
             setLoadingGithubRepos(false);
         }
     };
 
-    // 🔍 Filter by name
-    const filteredRepositories = repositories.filter(repo =>
-        repo.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
-    // ➕ Add new repo
-    const handleAddRepository = async () => {
-        if (!selectedRepo) return;
-
-        const selectedRepoData = githubRepos.find(repo => repo.id === selectedRepo);
-        if (!selectedRepoData) return;
-
-        const newRepo = {
-            name: selectedRepoData.name,
-            link: selectedRepoData.html_url,
-            description: selectedRepoData.description,
-            language: selectedRepoData.language,
-            stars: selectedRepoData.stargazers_count,
-            agents: []
-        };
-
-        try {
-            const res = await fetch('/api/repositories', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newRepo)
-            });
-            const savedRepo = await res.json();
-            setRepositories(prev => [...prev, savedRepo]);
-            closeAddDialog();
-        } catch (error) {
-            console.error('Erro ao adicionar repositório:', error);
-        }
+    const handleSearchChange = (event) => {
+        setSearchTerm(event.target.value);
+        setError('');
     };
 
-    // 🧠 Local toggle (pode ser trocado por chamada PATCH futuramente)
-    const handleToggleActiveAgent = (agentId) => {
-        const updated = repositories.map(repo => {
-            const updatedAgents = repo.agents.map(agent =>
-                agent.id === agentId ? { ...agent, active: !agent.active } : agent
-            );
-            return { ...repo, agents: updatedAgents };
-        });
-        setRepositories(updated);
-    };
+    const filteredRepositories = Array.isArray(repositories)
+        ? repositories.filter(repo =>
+            repo.name && repo.name.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        : [];
 
-    const handleDeleteAgent = (agentId) => {
-        const updated = repositories.map(repo => ({
-            ...repo,
-            agents: repo.agents.filter(agent => agent.id !== agentId)
-        }));
-        setRepositories(updated);
-    };
-
-    const handleAddAgent = (repoId) => {
-        navigate('/agents/create', { state: { repositoryId: repoId } });
-    };
-
-    const openAddDialog = () => {
-        setDialogOpen(true);
+    const handleOpenModal = () => {
+        setShowAddModal(true);
         fetchGithubRepositories();
     };
 
-    const closeAddDialog = () => {
-        setDialogOpen(false);
-        setSelectedRepo('');
-        setGithubRepos([]);
+    const handleCloseModal = () => {
+        setShowAddModal(false);
+        setSelectedGithubRepo(null);
+        setError('');
     };
 
+    const handleSelectGithubRepo = (repo) => {
+        setSelectedGithubRepo(repo);
+        setError('');
+    };
+
+   const handleConfirmAddRepository = async () => {
+        if (!selectedGithubRepo) {
+            setError(t('select_repo_to_add'));
+            return;
+        }
+        setLoadingGithubRepos(true);
+        setError('');
+        try {
+            // selectedGithubRepo tem: id, name, url
+            // Backend (Swagger image_6397f2.png) espera: id, agents
+
+            const payload = {
+                id: selectedGithubRepo.id, // ID do repositório GitHub
+                agents: [] // Lista de agentes, vazia por padrão ao adicionar um novo repo
+                           // Se o backend esperar uma estrutura específica para objetos de agente aqui,
+                           // mesmo que vazia, ajuste conforme necessário. Mas [] é o mais comum.
+            };
+
+            console.log("Enviando payload para POST /api/repositories:", payload);
+
+            await api.post('/api/repositories', payload); // Envia para o endpoint de adicionar
+            handleCloseModal();
+            await fetchRepositories();
+        } catch (err) {
+            // ... (bloco catch como estava ou o melhorado da resposta anterior) ...
+            console.error('Erro ao adicionar repositório:', err.response || err.message);
+            if (err.response?.data?.detail && Array.isArray(err.response.data.detail)) {
+                const errorMessages = err.response.data.detail.map(d => `${d.loc.join('.')} - ${d.msg}`).join('; ');
+                setError(t('error_adding_repository') + `: ${errorMessages}`);
+            } else if (err.response?.data?.detail) {
+                setError(t('error_adding_repository') + `: ${err.response.data.detail}`);
+            } else if (err.response?.status === 500) {
+                setError(t('error_adding_repository') + ': Internal Server Error. Please check backend logs.');
+            } else {
+                setError(t('error_adding_repository'));
+            }
+        } finally {
+            setLoadingGithubRepos(false);
+        }
+    };
+
+    if (loading && repositories.length === 0) {
+        return (
+            <Layout title={t('Repositórios')}>
+                <Box display="flex" justifyContent="center" alignItems="center" height="50vh">
+                    <CircularProgress />
+                </Box>
+            </Layout>
+        );
+    }
+
     return (
-        <Layout title="Repositories">
-            {/* Search + Add */}
-            <Paper
-                elevation={0}
-                sx={{
-                    p: 3,
-                    mb: 4,
-                    borderRadius: 2,
-                    backgroundColor: paperBgColor,
-                    border: `1px solid ${borderColor}`,
-                }}
-            >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 3 }}>
-                    <Typography variant="h6" fontWeight="500" sx={{ color: primaryTextColor }}>
-                        GitHub Repositories
+        <Layout title={t('Repositórios')}>
+            <Box sx={{ padding: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Typography variant="h4" component="h1">
+                        {t('Repositórios')}
                     </Typography>
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        onClick={openAddDialog}
-                        sx={{ textTransform: 'none' }}
-                    >
-                        Add Repository
+                    <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleOpenModal}>
+                        {t('Adicionar Repositório')}
                     </Button>
                 </Box>
-
                 <TextField
                     fullWidth
-                    placeholder="Search repositories"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
                     variant="outlined"
-                    size="small"
+                    placeholder={t('Pesquisar Repositorio')}
+                    value={searchTerm}
+                    onChange={handleSearchChange}
                     InputProps={{
                         startAdornment: (
                             <InputAdornment position="start">
@@ -172,114 +189,85 @@ const Repositories = () => {
                             </InputAdornment>
                         ),
                     }}
+                    sx={{ mb: 3 }}
                 />
-            </Paper>
 
-            {/* Repositories */}
-            {loading ? (
-                <Typography>Loading repositories...</Typography>
-            ) : filteredRepositories.length === 0 ? (
-                <Paper
-                    elevation={0}
-                    sx={{
-                        p: 4,
-                        textAlign: 'center',
-                        borderRadius: 2,
-                        backgroundColor: paperBgColor,
-                        border: `1px solid ${borderColor}`,
-                    }}
-                >
-                    <Typography variant="body1" sx={{ color: primaryTextColor }}>
-                        No repositories match your search.
-                    </Typography>
+                {error && !showAddModal && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                {loading && repositories.length > 0 && <CircularProgress sx={{ml: 1, mb: 2 }} size={24} />}
+
+                {!loading && filteredRepositories.length === 0 && searchTerm && (
+                     <Typography>{t('Nenhum repositório encontrado', { searchTerm })}</Typography>
+                )}
+                {!loading && repositories.length === 0 && !searchTerm && (
+                     <Typography>{t('Nenhum repositório encontrado')}</Typography>
+                )}
+
+                <Grid container spacing={3}>
+                    {filteredRepositories.map(repo => (
+                        <Grid item xs={12} sm={6} md={4} key={repo.id}>
+                            <RepositoryCard repository={repo} />
+                        </Grid>
+                    ))}
+                </Grid>
+            </Box>
+
+            <Modal
+                open={showAddModal}
+                onClose={handleCloseModal}
+                aria-labelledby="add-repository-modal-title"
+            >
+                <Paper sx={modalStyle}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Typography id="add-repository-modal-title" variant="h6" component="h2">
+                            {t('Importar repositório do GitHub')}
+                        </Typography>
+                        <IconButton onClick={handleCloseModal} aria-label={t('close')}>
+                            <CloseIcon />
+                        </IconButton>
+                    </Box>
+
+                    {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+                    {loadingGithubRepos ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+                            <CircularProgress />
+                        </Box>
+                    ) : (
+                        <Box sx={{ overflowY: 'auto', flexGrow: 1, mb: 2 }}>
+                            {githubRepos.length === 0 && !error && (
+                                <Typography sx={{ textAlign: 'center', my: 2 }}>
+                                    {t('Nenhum repositório encontrado')}
+                                </Typography>
+                            )}
+                            <List>
+                                {githubRepos.map(repo => (
+                                    <ListItemButton
+                                        key={repo.id}
+                                        selected={selectedGithubRepo?.id === repo.id}
+                                        onClick={() => handleSelectGithubRepo(repo)}
+                                    >
+                                        <ListItemText primary={repo.full_name || repo.name} secondary={repo.description} />
+                                    </ListItemButton>
+                                ))}
+                            </List>
+                        </Box>
+                    )}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 'auto', pt: 2 }}>
+                        <Button onClick={handleCloseModal} color="secondary">
+                            {t('cancelar')}
+                        </Button>
+                        <Button
+                            variant="contained"
+                            onClick={handleConfirmAddRepository}
+                            disabled={!selectedGithubRepo || loadingGithubRepos}
+                        >
+                            {t('Adicionar repositório selecionado')}
+                        </Button>
+                    </Box>
                 </Paper>
-            ) : (
-                filteredRepositories.map(repo => (
-                    <RepositoryCard
-                        key={repo.id}
-                        repository={repo}
-                        onAddAgent={handleAddAgent}
-                        onToggleActiveAgent={handleToggleActiveAgent}
-                        onDeleteAgent={handleDeleteAgent}
-                    />
-                ))
-            )}
-
-            {/* Dialog: Add Repo */}
-            <Dialog open={dialogOpen} onClose={closeAddDialog} maxWidth="sm" fullWidth>
-                <DialogTitle>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <GitHubIcon />
-                        Add GitHub Repository
-                    </Box>
-                </DialogTitle>
-                <DialogContent>
-                    <Box sx={{ mt: 2 }}>
-                        <FormControl fullWidth>
-                            <InputLabel id="github-repo-select-label">
-                                Select Repository
-                            </InputLabel>
-                            <Select
-                                labelId="github-repo-select-label"
-                                value={selectedRepo}
-                                label="Select Repository"
-                                onChange={(e) => setSelectedRepo(e.target.value)}
-                                disabled={loadingGithubRepos}
-                            >
-                                {loadingGithubRepos ? (
-                                    <MenuItem disabled>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <CircularProgress size={16} />
-                                            Loading repositories...
-                                        </Box>
-                                    </MenuItem>
-                                ) : githubRepos.length === 0 ? (
-                                    <MenuItem disabled>
-                                        No repositories found
-                                    </MenuItem>
-                                ) : (
-                                    githubRepos.map((repo) => (
-                                        <MenuItem key={repo.id} value={repo.id}>
-                                            <Box>
-                                                <Typography variant="body1" fontWeight="500">
-                                                    {repo.name}
-                                                </Typography>
-                                                {repo.description && (
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        {repo.description}
-                                                    </Typography>
-                                                )}
-                                                <Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}>
-                                                    {repo.language && (
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            {repo.language}
-                                                        </Typography>
-                                                    )}
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        ⭐ {repo.stargazers_count}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-                                        </MenuItem>
-                                    ))
-                                )}
-                            </Select>
-                        </FormControl>
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={closeAddDialog}>Cancel</Button>
-                    <Button
-                        onClick={handleAddRepository}
-                        variant="contained"
-                        disabled={!selectedRepo || loadingGithubRepos}
-                    >
-                        Add Repository
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            </Modal>
         </Layout>
     );
-};
+}
 
 export default Repositories;

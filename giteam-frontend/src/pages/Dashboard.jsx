@@ -13,7 +13,8 @@ import RepositoryCard from '../components/repository/RepositoryCard';
 import OperationsList from '../components/operations/OperationsList';
 
 import { useLanguage } from '../contexts/LanguageContext';
-import { minimalAgentOptions } from '../services/mockData'; // Pode manter temporariamente até mover para API
+import { minimalAgentOptions } from '../services/mockData';
+import { api } from '../services/api'; // Pode manter temporariamente até mover para API
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -23,23 +24,41 @@ function Dashboard() {
     const [operations, setOperations] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+   useEffect(() => {
         const fetchData = async () => {
+            setLoading(true); // Mantenha o setLoading no início
             try {
+                // Use Promise.all com a instância 'api' do Axios
                 const [reposRes, opsRes] = await Promise.all([
-                    fetch('/api/repositories'),
-                    fetch('/api/operations')
+                    api.get('/api/repositories'), // <--- ALTERADO DE fetch PARA api.get
+                    api.get('/api/operations')   // <--- ALTERADO DE fetch PARA api.get
                 ]);
 
-                const [reposData, opsData] = await Promise.all([
-                    reposRes.json(),
-                    opsRes.json()
-                ]);
+                // Com Axios, os dados já vêm em .data e são parseados
+                const reposData = reposRes.data; // <--- ALTERADO
+                const opsData = opsRes.data;     // <--- ALTERADO
 
-                setRepositories(reposData);
-                setOperations(opsData);
+                // Verifique se os dados recebidos são arrays antes de definir o estado
+                if (Array.isArray(reposData)) {
+                    setRepositories(reposData);
+                } else {
+                    console.error('API /api/repositories não retornou um array:', reposData);
+                    setRepositories([]); // Fallback para array vazio em caso de erro de formato
+                }
+
+                if (Array.isArray(opsData)) {
+                    setOperations(opsData);
+                } else {
+                    console.error('API /api/operations não retornou um array:', opsData);
+                    setOperations([]); // Fallback para array vazio
+                }
+
             } catch (error) {
                 console.error('Erro ao buscar dados da API:', error);
+                // Em caso de erro (incluindo 401), 'repositories' e 'operations'
+                // manterão o estado inicial de array vazio, o que é seguro para .reduce()
+                setRepositories([]);
+                setOperations([]);
             } finally {
                 setLoading(false);
             }
@@ -48,9 +67,18 @@ function Dashboard() {
         fetchData();
     }, []);
 
-    const getActiveAgentsCount = () =>
-        repositories.reduce((count, repo) =>
-            count + repo.agents.filter(agent => agent.active).length, 0);
+    const getActiveAgentsCount = () => {
+        if (!Array.isArray(repositories)) { // Uma verificação extra por segurança
+            return 0;
+        }
+        return repositories.reduce((count, repo) => {
+            // Adicione uma verificação para garantir que repo.agents existe e é um array
+            const activeAgentsInRepo = Array.isArray(repo.agents)
+                ? repo.agents.filter(agent => agent.active).length
+                : 0;
+            return count + activeAgentsInRepo;
+        }, 0);
+    };
 
     const getTotalMonthlyCost = () =>
         repositories.reduce((total, repo) =>
@@ -91,12 +119,12 @@ function Dashboard() {
         navigate('/operations');
     };
 
-    if (loading) {
+   if (loading) {
         return <Layout title={t('dashboard')}><Typography>{t('loading')}...</Typography></Layout>;
     }
 
     const activeAgentsCount = getActiveAgentsCount();
-    const repoCount = repositories.length;
+    const repoCount = repositories.length; // repositories será um array (vazio ou populado)
     const monthlyCost = getTotalMonthlyCost();
     const { prReviews, issueResolutions } = getOperationsByType();
     const recentOperations = operations.slice(0, 3);
