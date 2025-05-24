@@ -14,8 +14,6 @@ export const translations = {
         CardTitle3: 'Colaboração em equipe',
         CardDesc3: 'Aprimore os fluxos de trabalho da equipe com resumos de problemas e geração de documentação assistidos por IA.',
 
-
-
         // Layout
         dashboard: 'Painel',
         myAgents: 'Meus Agentes',
@@ -97,6 +95,7 @@ export const translations = {
         estimatedCost30Days: 'Custo estimado para os próximos 30 dias',
         basedOnAverage: 'Baseado em uma média de 1 operação por dia',
         agentActiveInfo: 'Seu agente ficará ativo imediatamente após a criação. Você pode pausá-lo a qualquer momento na página de Agentes.',
+        loadingModels: 'Carregando modelos de IA...',
 
         // Repository Card
         addAgent: 'Adicionar Agente',
@@ -160,7 +159,6 @@ export const translations = {
         CardTitle3: 'Team Collaboration',
         CardDesc3: 'Enhance team workflows with AI-assisted issue summaries and documentation generation.',
 
-
         // Layout
         dashboard: 'Dashboard',
         myAgents: 'My Agents',
@@ -194,7 +192,6 @@ export const translations = {
         prReviewAgentMinimal: 'PR Review',
         issueResolutionAgentMinimal: 'Issue Resolution',
         fullServiceAgentMinimal: 'Full Service',
-
 
         // Response Length
         concise: 'Concise',
@@ -243,6 +240,7 @@ export const translations = {
         estimatedCost30Days: 'Estimated cost for the next 30 days',
         basedOnAverage: 'Based on an average of 1 operation per day',
         agentActiveInfo: 'Your agent will be active immediately after creation. You can pause it at any time from the Agents page.',
+        loadingModels: 'Loading AI models...',
 
         // Repository Card
         addAgent: 'Add Agent',
@@ -341,7 +339,12 @@ export const LanguageProvider = ({ children }) => {
     };
 
     return (
-        <LanguageContext.Provider value={{ language, changeLanguage, t }}>
+        <LanguageContext.Provider value={{ 
+            language, 
+            currentLanguage: language, // Export currentLanguage as well for backwards compatibility
+            changeLanguage, 
+            t 
+        }}>
             {children}
         </LanguageContext.Provider>
     );

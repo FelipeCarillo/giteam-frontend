@@ -35,14 +35,15 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import Layout from '../components/layout/Layout';
 import { useLanguage } from '../contexts/LanguageContext';
-import { getAvailableRepositories, getRepositoryById } from '../services/repositories'
+import { getAvailableRepositories, getRepositoryById } from '../services/repositories';
+import { getAiModels } from '../services/agents'; // Import the getAiModels service
 
 const AgentCreate = () => {
     const theme = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
     const isDarkMode = theme.palette.mode === 'dark';
-    const { t } = useLanguage();
+    const { t, currentLanguage } = useLanguage(); // Get currentLanguage for API call
     
     // Pegue o repositoryId do estado da localização, se disponível
     const initialRepoId = location.state?.repositoryId || null;
@@ -99,10 +100,11 @@ const AgentCreate = () => {
     useEffect(() => {
         fetchAgentFunctions();
         fetchResponseLengthOptions();
+        fetchAvailableModels(); // Re-fetch models when language changes
         if (agentData.repository) {
             fetchAvailableFunctionsForRepository(agentData.repository);
         }
-    }, [t]); // Recarrega quando a função de tradução muda
+    }, [t, currentLanguage]); // Added currentLanguage dependency
 
     // Funções para buscar dados da API
     const fetchRepositories = async () => {
@@ -154,13 +156,19 @@ const AgentCreate = () => {
     };
 
     const fetchAvailableModels = async () => {
-        // Em uma implementação real, isso seria uma chamada à API
-        setAvailableModels([
-            { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', costPerToken: 0.00006, specialties: ['Code', 'Reasoning'], maxTokens: 8000 },
-            { id: 'gpt-3.5', name: 'GPT-3.5', provider: 'OpenAI', costPerToken: 0.00001, specialties: ['Speed', 'General'], maxTokens: 4000 },
-            { id: 'claude-3', name: 'Claude 3', provider: 'Anthropic', costPerToken: 0.00005, specialties: ['Documentation', 'Reasoning'], maxTokens: 7000 },
-            { id: 'llama-3', name: 'Llama 3', provider: 'Meta', costPerToken: 0.000015, specialties: ['Open Source', 'General'], maxTokens: 4000 },
-        ]);
+        try {
+            const response = await getAiModels(currentLanguage);
+            if (response && response.models) {
+                setAvailableModels(response.models);
+            } else {
+                console.warn('No models data received from API');
+                setAvailableModels([]);
+            }
+        } catch (error) {
+            console.error('Error fetching AI models:', error);
+            // Fallback to empty array or show error message
+            setAvailableModels([]);
+        }
     };
 
     const fetchResponseLengthOptions = async () => {
@@ -414,29 +422,42 @@ const AgentCreate = () => {
                                                     {t('provider', { name: model.provider })}
                                                 </Typography>
                                                 <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 2 }}>
-                                                    {t('cost', { cost: model.costPerToken.toFixed(5) })}
+                                                    {t('cost', { cost: model.costPerToken ? model.costPerToken.toFixed(5) : '0.00000' })}
                                                 </Typography>
                                                 <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 1 }}>
-                                                    {t('maxTokens', { count: model.maxTokens.toLocaleString() })}
+                                                    {t('maxTokens', { count: model.maxTokens ? model.maxTokens.toLocaleString() : '0' })}
                                                 </Typography>
                                                 
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                    {model.specialties.map(specialty => (
-                                                        <Chip 
-                                                            key={specialty} 
-                                                            label={specialty} 
-                                                            size="small"
-                                                            sx={{
-                                                                backgroundColor: isDarkMode ? 'rgba(56, 139, 253, 0.15)' : 'rgba(3, 102, 214, 0.1)',
-                                                                color: isDarkMode ? '#58a6ff' : '#0366d6'
-                                                            }}
-                                                        />
-                                                    ))}
-                                                </Box>
+                                                {Array.isArray(model.specialties) ? (
+                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                        {model.specialties.map((specialty) => (
+                                                            <Chip 
+                                                                key={specialty} 
+                                                                label={specialty} 
+                                                                size="small"
+                                                                sx={{
+                                                                    backgroundColor: isDarkMode ? 'rgba(56, 139, 253, 0.15)' : 'rgba(3, 102, 214, 0.1)',
+                                                                    color: isDarkMode ? '#58a6ff' : '#0366d6'
+                                                                }}
+                                                            />
+                                                        ))}
+                                                    </Box>
+                                                ) : model.specialties ? (
+                                                    <Typography variant="body2" sx={{ color: secondaryTextColor }}>
+                                                        {model.specialties}
+                                                    </Typography>
+                                                ) : null}
+
                                             </Paper>
                                         </Grid>
                                     ))}
                                 </Grid>
+                                
+                                {availableModels.length === 0 && (
+                                    <Alert severity="info" sx={{ mt: 2 }}>
+                                        {t('loadingModels') || 'Loading AI models...'}
+                                    </Alert>
+                                )}
                             </Grid>
                             
                             {(agentData.function === 'PR Review' || agentData.function === 'Both') && (
@@ -580,7 +601,7 @@ const AgentCreate = () => {
                                                 {t('estimatedTokens')}
                                             </Typography>
                                             <Typography variant="body1" sx={{ color: primaryTextColor, mb: 2 }}>
-                                                {estimatedTokens.toLocaleString()} {t('of')} {selectedModel?.maxTokens.toLocaleString() || 0}
+                                                {estimatedTokens.toLocaleString()} {t('of')} {selectedModel?.maxTokens ? selectedModel.maxTokens.toLocaleString() : 0}
                                             </Typography>
                                         </Grid>
                                         
