@@ -170,6 +170,7 @@ const AgentCreate = () => {
             setAvailableModels([]);
         }
     };
+    
 
     const fetchResponseLengthOptions = async () => {
         // Em uma implementação real, isso seria uma chamada à API
@@ -228,8 +229,7 @@ const AgentCreate = () => {
 
     // Form submission
     const handleSubmit = () => {
-        // Em uma aplicação real, isso salvaria o agente no backend
-        // Por enquanto, apenas redirecionamos de volta para a página de agentes
+        
         navigate('/agents');
     };
 
@@ -263,6 +263,15 @@ const AgentCreate = () => {
                 return null;
         }
     };
+const formatCost = (cost) => {
+    if (!cost || cost === 0) return '0.000000';
+    if (cost >= 0.000001) {
+        return cost.toFixed(6);
+    } else {
+        // Para valores muito pequenos, mostra em formato decimal com mais casas
+        return cost.toFixed(8);
+    }
+};
 
     // Render step content
     const getStepContent = (step) => {
@@ -415,17 +424,23 @@ const AgentCreate = () => {
                                                     />
                                                 )}
                                                 
-                                                <Typography variant="subtitle1" fontWeight={500} sx={{ mb: 1, color: primaryTextColor }}>
+                                                <Typography variant="subtitle1" fontWeight={500} sx={{ mb: 1, color: 'primaryTextColor' }}>
                                                     {model.name}
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 1 }}>
+
+                                                <Typography variant="body2" sx={{ color: 'secondaryTextColor', mb: 1 }}>
                                                     {t('provider', { name: model.provider })}
                                                 </Typography>
+
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 1 }}>
+                                                    {t('promptCosts')}: ${formatCost(model.prompt_token_cost)}
+                                                </Typography>
+
                                                 <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 2 }}>
-                                                    {t('cost', { cost: model.costPerToken ? model.costPerToken.toFixed(5) : '0.00000' })}
+                                                    {t('completionCosts')}: ${formatCost(model.completion_token_cost)}
                                                 </Typography>
                                                 <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 1 }}>
-                                                    {t('maxTokens', { count: model.maxTokens ? model.maxTokens.toLocaleString() : '0' })}
+                                                    {model.provider}
                                                 </Typography>
                                                 
                                                 {Array.isArray(model.specialties) ? (
@@ -525,13 +540,24 @@ const AgentCreate = () => {
             
             case 2:
                 // Encontra o modelo selecionado
-                const selectedModel = availableModels.find(m => m.id === agentData.model);
-                // Encontra a opção de comprimento de resposta selecionada
-                const selectedResponseLength = responseLengthOptions.find(o => o.id === agentData.responseLength);
-                // Calcula os tokens estimados
-                const estimatedTokens = selectedModel 
-                    ? Math.round(selectedModel.maxTokens * (selectedResponseLength?.tokenPercentage || 0.6))
-                    : 0;
+    const selectedModel = availableModels.find(m => m.id === agentData.model);
+    // Encontra a opção de comprimento de resposta selecionada
+    const selectedResponseLength = responseLengthOptions.find(o => o.id === agentData.responseLength);
+    
+    // Calcula os tokens estimados - usando valores padrão se não encontrar
+    const maxTokens = selectedModel?.max_tokens || 8000; // valor padrão
+    const tokenPercentage = selectedResponseLength?.tokenPercentage || 0.6;
+    const estimatedTokens = Math.round(maxTokens * tokenPercentage);
+    
+    // Calcula o custo estimado
+    const promptCost = selectedModel?.prompt_token_cost || 0;
+    const completionCost = selectedModel?.completion_token_cost || 0;
+    const avgTokensPerOperation = estimatedTokens;
+    const operationsPerDay = 1;
+    const daysInMonth = 30;
+    
+    // Custo total = (prompt + completion) * tokens * operações * dias
+    const totalMonthlyCost = ((promptCost + completionCost) * avgTokensPerOperation * operationsPerDay * daysInMonth) || 0;
                 
                 return (
                     <>
@@ -601,7 +627,7 @@ const AgentCreate = () => {
                                                 {t('estimatedTokens')}
                                             </Typography>
                                             <Typography variant="body1" sx={{ color: primaryTextColor, mb: 2 }}>
-                                                {estimatedTokens.toLocaleString()} {t('of')} {selectedModel?.maxTokens ? selectedModel.maxTokens.toLocaleString() : 0}
+                                                {estimatedTokens.toLocaleString()} {t('of')} {maxTokens.toLocaleString()}
                                             </Typography>
                                         </Grid>
                                         
@@ -635,7 +661,7 @@ const AgentCreate = () => {
                                         </Typography>
                                         
                                         <Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 500 }}>
-                                            ${((selectedModel?.costPerToken || 0) * estimatedTokens * 30).toFixed(2)}
+                                            ${totalMonthlyCost.toFixed(4)}
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: secondaryTextColor, display: 'block' }}>
                                             {t('basedOnAverage')}
