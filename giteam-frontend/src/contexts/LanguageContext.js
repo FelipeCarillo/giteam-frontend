@@ -14,8 +14,6 @@ export const translations = {
         CardTitle3: 'Colaboração em equipe',
         CardDesc3: 'Aprimore os fluxos de trabalho da equipe com resumos de problemas e geração de documentação assistidos por IA.',
 
-
-
         // Layout
         dashboard: 'Painel',
         myAgents: 'Meus Agentes',
@@ -81,8 +79,8 @@ export const translations = {
         chooseDescriptiveName: 'Escolha um nome descritivo para seu agente',
         selectAIModel: 'Selecione o modelo AI:',
         provider: 'Provedor: {name}',
-        cost: 'Custo: ${cost} por token',
-        maxTokens: 'Máx. tokens: {count}',
+        promptCosts: 'Custos de Prompt:',
+        completionCosts: 'Custos de Completion:',
         monitoredBranches: 'Branches Monitoradas',
         addBranchName: 'Adicione o nome da branch',
         branchesToMonitor: 'Adicione as branches que você deseja que este agente monitore',
@@ -97,6 +95,7 @@ export const translations = {
         estimatedCost30Days: 'Custo estimado para os próximos 30 dias',
         basedOnAverage: 'Baseado em uma média de 1 operação por dia',
         agentActiveInfo: 'Seu agente ficará ativo imediatamente após a criação. Você pode pausá-lo a qualquer momento na página de Agentes.',
+        loadingModels: 'Carregando modelos de IA...',
 
         // Repository Card
         addAgent: 'Adicionar Agente',
@@ -160,7 +159,6 @@ export const translations = {
         CardTitle3: 'Team Collaboration',
         CardDesc3: 'Enhance team workflows with AI-assisted issue summaries and documentation generation.',
 
-
         // Layout
         dashboard: 'Dashboard',
         myAgents: 'My Agents',
@@ -195,7 +193,6 @@ export const translations = {
         issueResolutionAgentMinimal: 'Issue Resolution',
         fullServiceAgentMinimal: 'Full Service',
 
-
         // Response Length
         concise: 'Concise',
         conciseDesc: 'Short and direct responses (40% of maximum tokens)',
@@ -227,7 +224,8 @@ export const translations = {
         chooseDescriptiveName: 'Choose a descriptive name for your agent',
         selectAIModel: 'Select AI Model:',
         provider: 'Provider: {name}',
-        cost: 'Cost: ${cost} per token',
+        promptCosts: 'Prompt Cost:',
+        completionCosts: 'Cost of Completion:',
         maxTokens: 'Max tokens: {count}',
         monitoredBranches: 'Monitored Branches',
         addBranchName: 'Add branch name',
@@ -243,6 +241,7 @@ export const translations = {
         estimatedCost30Days: 'Estimated cost for the next 30 days',
         basedOnAverage: 'Based on an average of 1 operation per day',
         agentActiveInfo: 'Your agent will be active immediately after creation. You can pause it at any time from the Agents page.',
+        loadingModels: 'Loading AI models...',
 
         // Repository Card
         addAgent: 'Add Agent',
@@ -341,7 +340,12 @@ export const LanguageProvider = ({ children }) => {
     };
 
     return (
-        <LanguageContext.Provider value={{ language, changeLanguage, t }}>
+        <LanguageContext.Provider value={{ 
+            language, 
+            currentLanguage: language, // Export currentLanguage as well for backwards compatibility
+            changeLanguage, 
+            t 
+        }}>
             {children}
         </LanguageContext.Provider>
     );

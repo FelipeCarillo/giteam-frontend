@@ -35,13 +35,15 @@ import BugReportIcon from '@mui/icons-material/BugReport';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import Layout from '../components/layout/Layout';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getAvailableRepositories, getRepositoryById } from '../services/repositories';
+import { getAiModels } from '../services/agents'; // Import the getAiModels service
 
 const AgentCreate = () => {
     const theme = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
     const isDarkMode = theme.palette.mode === 'dark';
-    const { t } = useLanguage();
+    const { t, currentLanguage } = useLanguage(); // Get currentLanguage for API call
     
     // Pegue o repositoryId do estado da localização, se disponível
     const initialRepoId = location.state?.repositoryId || null;
@@ -98,21 +100,20 @@ const AgentCreate = () => {
     useEffect(() => {
         fetchAgentFunctions();
         fetchResponseLengthOptions();
+        fetchAvailableModels(); // Re-fetch models when language changes
         if (agentData.repository) {
             fetchAvailableFunctionsForRepository(agentData.repository);
         }
-    }, [t]); // Recarrega quando a função de tradução muda
+    }, [t, currentLanguage]); // Added currentLanguage dependency
 
-    // Funções para buscar dados que substituiriam o mockData
+    // Funções para buscar dados da API
     const fetchRepositories = async () => {
-        // Em uma implementação real, isso seria uma chamada à API
-        // Por enquanto, vamos simular com dados vazios
-        setRepositories([
-            // Os repositórios seriam carregados da API
-            { id: 1, name: 'giteams' },
-            { id: 2, name: 'chat-question-awnser' },
-            { id: 3, name: 'apaeleilao_backend' },
-        ]);
+        try {
+            const repositories = await getAvailableRepositories();
+            setRepositories(repositories.repositories);
+        } catch (error) {
+            console.error('Error fetching repositories:', error);
+        }
     };
 
     const fetchAgentFunctions = async () => {
@@ -120,17 +121,17 @@ const AgentCreate = () => {
         // Agora usando as traduções do contexto
         setAvailableFunctions([
             {
-                id: 'PR Review',
+                id: 'pr_review',
                 title: t('prReviewAgent'),
                 description: t('prReviewDesc')
             },
             {
-                id: 'Issue Resolution',
+                id: 'issue_resolution',
                 title: t('issueResolutionAgent'),
                 description: t('issueResolutionDesc')
             },
             {
-                id: 'Both',
+                id: 'both',
                 title: t('fullServiceAgent'),
                 description: t('fullServiceDesc')
             }
@@ -138,36 +139,38 @@ const AgentCreate = () => {
     };
 
     const fetchAvailableFunctionsForRepository = async (repositoryId) => {
-        // Em uma implementação real, isso seria uma chamada à API com o ID do repositório
-        // Agora usando as traduções do contexto
-        setAvailableFunctions([
-            {
-                id: 'PR Review',
-                title: t('prReviewAgent'),
-                description: t('prReviewDesc')
-            },
-            {
-                id: 'Issue Resolution',
-                title: t('issueResolutionAgent'),
-                description: t('issueResolutionDesc')
-            },
-            {
-                id: 'Both',
-                title: t('fullServiceAgent'),
-                description: t('fullServiceDesc')
+        const repoData = repositories.find(r => r.id === repositoryId);
+        if (repoData) {
+            const repo = await getRepositoryById(repositoryId);
+            if (repo.repository) {
+                if (repo.repository.agents.length > 0) {
+                    const existingAgent = repo.repository.agents[0];
+                    if (existingAgent.function === 'Both') {
+                        setAvailableFunctions([]);
+                    } else {
+                        setAvailableFunctions(availableFunctions.filter(f => f.id !== existingAgent.function));
+                    }
+                }
             }
-        ]);
+        }
     };
 
     const fetchAvailableModels = async () => {
-        // Em uma implementação real, isso seria uma chamada à API
-        setAvailableModels([
-            { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', costPerToken: 0.00006, specialties: ['Code', 'Reasoning'], maxTokens: 8000 },
-            { id: 'gpt-3.5', name: 'GPT-3.5', provider: 'OpenAI', costPerToken: 0.00001, specialties: ['Speed', 'General'], maxTokens: 4000 },
-            { id: 'claude-3', name: 'Claude 3', provider: 'Anthropic', costPerToken: 0.00005, specialties: ['Documentation', 'Reasoning'], maxTokens: 7000 },
-            { id: 'llama-3', name: 'Llama 3', provider: 'Meta', costPerToken: 0.000015, specialties: ['Open Source', 'General'], maxTokens: 4000 },
-        ]);
+        try {
+            const response = await getAiModels(currentLanguage);
+            if (response && response.models) {
+                setAvailableModels(response.models);
+            } else {
+                console.warn('No models data received from API');
+                setAvailableModels([]);
+            }
+        } catch (error) {
+            console.error('Error fetching AI models:', error);
+            // Fallback to empty array or show error message
+            setAvailableModels([]);
+        }
     };
+    
 
     const fetchResponseLengthOptions = async () => {
         // Em uma implementação real, isso seria uma chamada à API
@@ -226,8 +229,7 @@ const AgentCreate = () => {
 
     // Form submission
     const handleSubmit = () => {
-        // Em uma aplicação real, isso salvaria o agente no backend
-        // Por enquanto, apenas redirecionamos de volta para a página de agentes
+        
         navigate('/agents');
     };
 
@@ -242,7 +244,7 @@ const AgentCreate = () => {
                 return agentData.function && agentData.repository;
             case 1: // Model and Configuration
                 return agentData.name && agentData.model && 
-                       (agentData.function !== 'PR Review' && agentData.function !== 'Both' || agentData.branches.length > 0);
+                       ((agentData.function !== 'PR Review' && agentData.function !== 'Both') || agentData.branches.length > 0);
             default:
                 return true;
         }
@@ -261,6 +263,15 @@ const AgentCreate = () => {
                 return null;
         }
     };
+const formatCost = (cost) => {
+    if (!cost || cost === 0) return '0.000000';
+    if (cost >= 0.000001) {
+        return cost.toFixed(6);
+    } else {
+        // Para valores muito pequenos, mostra em formato decimal com mais casas
+        return cost.toFixed(8);
+    }
+};
 
     // Render step content
     const getStepContent = (step) => {
@@ -413,36 +424,55 @@ const AgentCreate = () => {
                                                     />
                                                 )}
                                                 
-                                                <Typography variant="subtitle1" fontWeight={500} sx={{ mb: 1, color: primaryTextColor }}>
+                                                <Typography variant="subtitle1" fontWeight={500} sx={{ mb: 1, color: 'primaryTextColor' }}>
                                                     {model.name}
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 1 }}>
+
+                                                <Typography variant="body2" sx={{ color: 'secondaryTextColor', mb: 1 }}>
                                                     {t('provider', { name: model.provider })}
                                                 </Typography>
+
+                                                <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 1 }}>
+                                                    {t('promptCosts')}: ${formatCost(model.prompt_token_cost)}
+                                                </Typography>
+
                                                 <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 2 }}>
-                                                    {t('cost', { cost: model.costPerToken.toFixed(5) })}
+                                                    {t('completionCosts')}: ${formatCost(model.completion_token_cost)}
                                                 </Typography>
                                                 <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 1 }}>
-                                                    {t('maxTokens', { count: model.maxTokens.toLocaleString() })}
+                                                    {model.provider}
                                                 </Typography>
                                                 
-                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                    {model.specialties.map(specialty => (
-                                                        <Chip 
-                                                            key={specialty} 
-                                                            label={specialty} 
-                                                            size="small"
-                                                            sx={{
-                                                                backgroundColor: isDarkMode ? 'rgba(56, 139, 253, 0.15)' : 'rgba(3, 102, 214, 0.1)',
-                                                                color: isDarkMode ? '#58a6ff' : '#0366d6'
-                                                            }}
-                                                        />
-                                                    ))}
-                                                </Box>
+                                                {Array.isArray(model.specialties) ? (
+                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                        {model.specialties.map((specialty) => (
+                                                            <Chip 
+                                                                key={specialty} 
+                                                                label={specialty} 
+                                                                size="small"
+                                                                sx={{
+                                                                    backgroundColor: isDarkMode ? 'rgba(56, 139, 253, 0.15)' : 'rgba(3, 102, 214, 0.1)',
+                                                                    color: isDarkMode ? '#58a6ff' : '#0366d6'
+                                                                }}
+                                                            />
+                                                        ))}
+                                                    </Box>
+                                                ) : model.specialties ? (
+                                                    <Typography variant="body2" sx={{ color: secondaryTextColor }}>
+                                                        {model.specialties}
+                                                    </Typography>
+                                                ) : null}
+
                                             </Paper>
                                         </Grid>
                                     ))}
                                 </Grid>
+                                
+                                {availableModels.length === 0 && (
+                                    <Alert severity="info" sx={{ mt: 2 }}>
+                                        {t('loadingModels') || 'Loading AI models...'}
+                                    </Alert>
+                                )}
                             </Grid>
                             
                             {(agentData.function === 'PR Review' || agentData.function === 'Both') && (
@@ -510,13 +540,24 @@ const AgentCreate = () => {
             
             case 2:
                 // Encontra o modelo selecionado
-                const selectedModel = availableModels.find(m => m.id === agentData.model);
-                // Encontra a opção de comprimento de resposta selecionada
-                const selectedResponseLength = responseLengthOptions.find(o => o.id === agentData.responseLength);
-                // Calcula os tokens estimados
-                const estimatedTokens = selectedModel 
-                    ? Math.round(selectedModel.maxTokens * (selectedResponseLength?.tokenPercentage || 0.6))
-                    : 0;
+    const selectedModel = availableModels.find(m => m.id === agentData.model);
+    // Encontra a opção de comprimento de resposta selecionada
+    const selectedResponseLength = responseLengthOptions.find(o => o.id === agentData.responseLength);
+    
+    // Calcula os tokens estimados - usando valores padrão se não encontrar
+    const maxTokens = selectedModel?.max_tokens || 8000; // valor padrão
+    const tokenPercentage = selectedResponseLength?.tokenPercentage || 0.6;
+    const estimatedTokens = Math.round(maxTokens * tokenPercentage);
+    
+    // Calcula o custo estimado
+    const promptCost = selectedModel?.prompt_token_cost || 0;
+    const completionCost = selectedModel?.completion_token_cost || 0;
+    const avgTokensPerOperation = estimatedTokens;
+    const operationsPerDay = 1;
+    const daysInMonth = 30;
+    
+    // Custo total = (prompt + completion) * tokens * operações * dias
+    const totalMonthlyCost = ((promptCost + completionCost) * avgTokensPerOperation * operationsPerDay * daysInMonth) || 0;
                 
                 return (
                     <>
@@ -586,7 +627,7 @@ const AgentCreate = () => {
                                                 {t('estimatedTokens')}
                                             </Typography>
                                             <Typography variant="body1" sx={{ color: primaryTextColor, mb: 2 }}>
-                                                {estimatedTokens.toLocaleString()} {t('of')} {selectedModel?.maxTokens.toLocaleString() || 0}
+                                                {estimatedTokens.toLocaleString()} {t('of')} {maxTokens.toLocaleString()}
                                             </Typography>
                                         </Grid>
                                         
@@ -620,7 +661,7 @@ const AgentCreate = () => {
                                         </Typography>
                                         
                                         <Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 500 }}>
-                                            ${((selectedModel?.costPerToken || 0) * estimatedTokens * 30).toFixed(2)}
+                                            ${totalMonthlyCost.toFixed(4)}
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: secondaryTextColor, display: 'block' }}>
                                             {t('basedOnAverage')}
