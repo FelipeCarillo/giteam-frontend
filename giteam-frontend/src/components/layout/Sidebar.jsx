@@ -43,6 +43,7 @@ const Sidebar = ({ drawerOpen, toggleDrawer }) => {
         { text: t('repositories'), icon: <FolderIcon />, path: '/repositories' },
         { text: t('operationHistory'), icon: <HistoryIcon />, path: '/operations' },
         { text: t('costs'), icon: <PaidIcon />, path: '/costs' },
+        {text: t('settings'), icon: <SettingsIcon />, path: '/settings' },
     ];
 
     const handleNavigation = (path) => {
@@ -69,63 +70,65 @@ const Sidebar = ({ drawerOpen, toggleDrawer }) => {
                 },
             }}
         >
-            <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <SmartToyOutlinedIcon
-                        sx={{
-                            fontSize: 24,
-                            mr: 1,
-                            color: primaryColor
-                        }}
-                    />
-                    <Typography variant="h6" fontWeight="bold" sx={{ color: primaryTextColor }}>
-                        GiTeams
-                    </Typography>
-                </Box>
-                {isMobile && (
-                    <IconButton onClick={toggleDrawer}>
-                        <ChevronRightIcon />
-                    </IconButton>
-                )}
-            </Box>
-            <Divider sx={{ borderColor }} />
-            <List>
-                {menuItems.map((item) => {
-                    const isActive = location.pathname === item.path || 
-                                    (item.path !== '/' && location.pathname.startsWith(item.path));
-                    
-                    return (
-                        <ListItem 
-                            button 
-                            key={item.text} 
-                            onClick={() => handleNavigation(item.path)}
+            <>
+                <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <SmartToyOutlinedIcon
                             sx={{
-                                '&:hover': {
-                                    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'
-                                }
+                                fontSize: 24,
+                                mr: 1,
+                                color: primaryColor
                             }}
-                        >
-                            <ListItemIcon 
-                                sx={{ 
-                                    color: isActive ? primaryColor : secondaryTextColor, 
-                                    minWidth: 40 
+                        />
+                        <Typography variant="h6" fontWeight="bold" sx={{ color: primaryTextColor }}>
+                            GiTeams
+                        </Typography>
+                    </Box>
+                    {isMobile && (
+                        <IconButton onClick={toggleDrawer}>
+                            <ChevronRightIcon />
+                        </IconButton>
+                    )}
+                </Box>
+                <Divider sx={{ borderColor }} />
+                <List>
+                    {menuItems.map((item) => {
+                        const isActive = location.pathname === item.path || 
+                                        (item.path !== '/' && location.pathname.startsWith(item.path));
+                        
+                        return (
+                            <ListItem 
+                                button 
+                                key={item.text} 
+                                onClick={() => handleNavigation(item.path)}
+                                sx={{
+                                    '&:hover': {
+                                        backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'
+                                    }
                                 }}
                             >
-                                {item.icon}
-                            </ListItemIcon>
-                            <ListItemText
-                                primary={item.text}
-                                primaryTypographyProps={{
-                                    color: isActive ? primaryTextColor : secondaryTextColor,
-                                    fontWeight: isActive ? 500 : 400
-                                }}
-                            />
-                        </ListItem>
-                    );
-                })}
-            </List>
+                                <ListItemIcon 
+                                    sx={{ 
+                                        color: isActive ? primaryColor : secondaryTextColor, 
+                                        minWidth: 40 
+                                    }}
+                                >
+                                    {item.icon}
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary={item.text}
+                                    primaryTypographyProps={{
+                                        color: isActive ? primaryTextColor : secondaryTextColor,
+                                        fontWeight: isActive ? 500 : 400
+                                    }}
+                                />
+                            </ListItem>
+                        );
+                    })}
+                </List>
+            </>
         </Drawer>
     );
 };
 
-export default Sidebar;
+export default Sidebar;

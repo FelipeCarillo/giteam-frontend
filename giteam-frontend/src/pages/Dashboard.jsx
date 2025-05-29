@@ -17,7 +17,7 @@ import { minimalAgentOptions } from '../services/mockData'; // Pode manter tempo
 
 function Dashboard() {
     const navigate = useNavigate();
-    const { t, language } = useLanguage(); // Adiciona language para forçar re-render
+    const { t, language } = useLanguage();
 
     const [repositories, setRepositories] = useState([]);
     const [operations, setOperations] = useState([]);
@@ -36,10 +36,15 @@ function Dashboard() {
                     opsRes.json()
                 ]);
 
-                setRepositories(reposData);
-                setOperations(opsData);
+                // Garante que repositories e operations sejam sempre arrays
+                setRepositories(Array.isArray(reposData) ? reposData : []);
+                setOperations(Array.isArray(opsData) ? opsData : []);
+
             } catch (error) {
                 console.error('Erro ao buscar dados da API:', error);
+                // Em caso de erro, define como arrays vazios para evitar falhas no render
+                setRepositories([]);
+                setOperations([]);
             } finally {
                 setLoading(false);
             }
@@ -48,15 +53,32 @@ function Dashboard() {
         fetchData();
     }, []);
 
-    const getActiveAgentsCount = () =>
-        repositories.reduce((count, repo) =>
-            count + repo.agents.filter(agent => agent.active).length, 0);
+    const getActiveAgentsCount = () => {
+        if (!Array.isArray(repositories)) {
+            return 0;
+        }
+        return repositories.reduce((count, repo) => {
+            // Adiciona verificação para repo.agents
+            const activeAgentsInRepo = Array.isArray(repo.agents) ? repo.agents.filter(agent => agent.active).length : 0;
+            return count + activeAgentsInRepo;
+        }, 0);
+    };
 
-    const getTotalMonthlyCost = () =>
-        repositories.reduce((total, repo) =>
-            total + repo.agents.reduce((sum, agent) => sum + agent.costMonth, 0), 0);
+    const getTotalMonthlyCost = () => {
+        if (!Array.isArray(repositories)) {
+            return 0;
+        }
+        return repositories.reduce((total, repo) => {
+            // Adiciona verificação para repo.agents
+            const costInRepo = Array.isArray(repo.agents) ? repo.agents.reduce((sum, agent) => sum + (agent.costMonth || 0), 0) : 0;
+            return total + costInRepo;
+        }, 0);
+    };
 
     const getOperationsByType = () => {
+        if (!Array.isArray(operations)) {
+            return { prReviews: 0, issueResolutions: 0 };
+        }
         const prReviews = operations.filter(op => op.icon === 'CodeIcon').length;
         const issueResolutions = operations.filter(op => op.icon === 'BugReportIcon').length;
         return { prReviews, issueResolutions };
@@ -68,12 +90,12 @@ function Dashboard() {
 
     const handleToggleActiveAgent = (agentId) => {
         const updatedRepositories = repositories.map(repo => {
-            const updatedAgents = repo.agents.map(agent => {
+            const updatedAgents = Array.isArray(repo.agents) ? repo.agents.map(agent => {
                 if (agent.id === agentId) {
                     return { ...agent, active: !agent.active };
                 }
                 return agent;
-            });
+            }) : [];
             return { ...repo, agents: updatedAgents };
         });
         setRepositories(updatedRepositories);
@@ -82,7 +104,7 @@ function Dashboard() {
     const handleDeleteAgent = (agentId) => {
         const updatedRepositories = repositories.map(repo => ({
             ...repo,
-            agents: repo.agents.filter(agent => agent.id !== agentId)
+            agents: Array.isArray(repo.agents) ? repo.agents.filter(agent => agent.id !== agentId) : []
         }));
         setRepositories(updatedRepositories);
     };
@@ -95,11 +117,12 @@ function Dashboard() {
         return <Layout title={t('dashboard')}><Typography>{t('loading')}...</Typography></Layout>;
     }
 
+    // As chamadas de função agora são mais seguras
     const activeAgentsCount = getActiveAgentsCount();
-    const repoCount = repositories.length;
+    const repoCount = Array.isArray(repositories) ? repositories.length : 0;
     const monthlyCost = getTotalMonthlyCost();
     const { prReviews, issueResolutions } = getOperationsByType();
-    const recentOperations = operations.slice(0, 3);
+    const recentOperations = Array.isArray(operations) ? operations.slice(0, 3) : [];
 
     return (
         <Layout title={t('dashboard')}>
@@ -126,7 +149,7 @@ function Dashboard() {
                         <StatCard
                             icon={<HistoryIcon />}
                             title={t('operationsThisWeek')}
-                            value={operations.length}
+                            value={Array.isArray(operations) ? operations.length : 0}
                             subtitle={`${t('prReviews', { count: prReviews })} | ${t('issueResolutions', { count: issueResolutions })}`}
                         />
                     </Grid>
@@ -135,7 +158,7 @@ function Dashboard() {
 
             {/* Create New Agent */}
             <AgentCreationCard
-                agentOptions={minimalAgentOptions}
+                agentOptions={minimalAgentOptions} //
                 title={t('createNewAgent')}
                 description={t('createAgentDesc')}
             />
@@ -145,7 +168,7 @@ function Dashboard() {
                 <Typography variant="h6" fontWeight="500" gutterBottom sx={{ mb: 2 }}>
                     {t('yourRepositoriesAgents')}
                 </Typography>
-                {repositories.map(repo => (
+                {Array.isArray(repositories) && repositories.map(repo => (
                     <RepositoryCard
                         key={repo.id}
                         repository={repo}
@@ -162,7 +185,7 @@ function Dashboard() {
                     {t('recentOperations')}
                 </Typography>
                 <OperationsList
-                    key={language} // Força re-render quando o idioma muda
+                    key={language}
                     operations={recentOperations}
                     showViewAll={true}
                     onViewAll={handleViewAllOperations}
@@ -172,4 +195,4 @@ function Dashboard() {
     );
 }
 
-export default Dashboard;
+export default Dashboard;
