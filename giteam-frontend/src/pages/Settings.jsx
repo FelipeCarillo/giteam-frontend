@@ -11,12 +11,15 @@ import {
   IconButton,
   Stack
 } from '@mui/material';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import Layout from '../components/layout/Layout';
 import { getToken, logout } from '../services/auth';
 import { api } from '../services/api';
 
+
 const Settings = () => {
+  const { t } = useLanguage();
   const [providers, setProviders] = useState([]);
   const [keys, setKeys]           = useState({});
   const [editing, setEditing]     = useState({});
@@ -155,21 +158,22 @@ const Settings = () => {
     } finally {
       setSaving(false);
     }
+    if (loading) {
+      return (
+        <Layout title="Configurações de IA">
+          <Box textAlign="center" mt={6}><CircularProgress/></Box>
+        </Layout>
+      );
+    }
   };
-
-  if (loading) {
-    return (
-      <Layout title="Configurações de IA">
-        <Box textAlign="center" mt={6}><CircularProgress/></Box>
-      </Layout>
-    );
-  }
+  
 
   return (
+
     <Layout title="Configurações de IA">
       <Paper sx={{ p:4, maxWidth:700, mx:'auto' }}>
         <Typography variant="h5" gutterBottom>
-          Insira suas chaves de API de IA
+          {t('keysTitle')}
         </Typography>
 
         {error   && <Alert severity="error"   sx={{ mb:2 }}>{error}</Alert>}
@@ -186,7 +190,7 @@ const Settings = () => {
                 <Box key={pr}>
                   <Typography variant="subtitle1">{pr}</Typography>
                   <Button variant="contained" onClick={handleEdit(pr)}>
-                    Adicionar chave
+                    {t('addKey')}
                   </Button>
                 </Box>
               );
@@ -199,9 +203,9 @@ const Settings = () => {
                   <Typography variant="subtitle1">{pr}</Typography>
                   <TextField fullWidth type="password" value={value} disabled />
                   <Box sx={{ mt:1, display:'flex', gap:1 }}>
-                    <Button onClick={handleEdit(pr)}>Editar</Button>
+                    <Button onClick={handleEdit(pr)}>{t('editKeys')}</Button>
                     <Button color="error" onClick={() => handleDelete(pr)} disabled={saving}>
-                      {saving ? <CircularProgress size={20}/> : 'Apagar'}
+                      {saving ? <CircularProgress size={20}/> : t('deleteKey')}
                     </Button>
                   </Box>
                 </Box>
@@ -232,10 +236,10 @@ const Settings = () => {
                     onClick={() => handleSave(pr)}
                     disabled={saving}
                   >
-                    {saving ? <CircularProgress size={20}/> : 'Salvar'}
+                    {saving ? <CircularProgress size={20}/> : t('saveKey')}
                   </Button>
                   <Button onClick={handleCancel(pr)} disabled={saving}>
-                    Cancelar
+                    {t('cancelKey')}
                   </Button>
                 </Box>
               </Box>

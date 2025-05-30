@@ -20,7 +20,7 @@ export const translations = {
         repositories: 'Repositórios',
         operationHistory: 'Histórico de Operações',
         costs: 'Custos',
-        settings: 'Configurações',
+        keys: 'Gerenciamento de Keys',
         signOut: 'Sair',
 
         // Dashboard
@@ -121,6 +121,14 @@ export const translations = {
         operationCost: 'Custo Total',
         operationSearchResults: 'Nenhuma operação corresponde aos seus filtros.',
 
+        //keys
+        keysTitle: 'Insira suas chaves de API de IA',
+        editKeys: 'Editar Chave',
+        deleteKey: 'Deletar Chave',
+        addKey: 'Adicionar Chave',
+        saveKey: 'Salvar Chave',
+        cancelKey: 'Cancelar',
+
         // Common
         function: 'Função',
         in: 'em',
@@ -165,7 +173,7 @@ export const translations = {
         repositories: 'Repositories',
         operationHistory: 'Operation History',
         costs: 'Costs',
-        settings: 'Settings',
+        keys: 'Keys Management',
         signOut: 'Sign out',
 
         // Dashboard
@@ -266,6 +274,14 @@ export const translations = {
         operationAllTypes: 'All Types',
         operationCost: 'Total Cost',
         operationSearchResults: 'No operations match your filters.',
+
+        //keys
+        keysTitle: 'Insert your AI API keys',
+        editKeys: 'Edit Key',
+        deleteKey: 'Delete Key',
+        addKey: 'Add Key',
+        saveKey: 'Save Key',
+        cancelKey: 'Cancel',
 
         // Common
         function: 'Function',
