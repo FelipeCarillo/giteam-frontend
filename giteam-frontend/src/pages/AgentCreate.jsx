@@ -37,6 +37,7 @@ import Layout from '../components/layout/Layout';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getAvailableRepositories, getRepositoryById } from '../services/repositories';
 import { getAiModels } from '../services/agents'; // Import the getAiModels service
+import { api } from '../services/api';
 
 const AgentCreate = () => {
     const theme = useTheme();
@@ -228,10 +229,29 @@ const AgentCreate = () => {
     };
 
     // Form submission
-    const handleSubmit = () => {
-        
-        navigate('/agents');
-    };
+    const handleSubmit = async () => {
+    try {
+        const payload = {
+            id: agentData.repository,       
+            agents: [
+                {
+                    name: agentData.name,          
+                    function: agentData.function,  
+                    ai_model_id: agentData.model, 
+                    response_length: agentData.responseLength
+                }
+            ]
+        };
+
+         const response = await api.post('/repositories', payload);
+        console.log('Repositório criado com sucesso:', response.data);
+        // aqui você pode navegar ou exibir um toast de sucesso, por exemplo:
+        navigate(`/repositories/${response.data.id}`);
+    } catch (error) {
+        console.error('Erro ao criar repositório:', error);
+        // opcional: mostrar mensagem de erro ao usuário
+    }
+};
 
     const handleCancel = () => {
         navigate(-1);
@@ -244,7 +264,7 @@ const AgentCreate = () => {
                 return agentData.function && agentData.repository;
             case 1: // Model and Configuration
                 return agentData.name && agentData.model && 
-                       ((agentData.function !== 'PR Review' && agentData.function !== 'Both') || agentData.branches.length > 0);
+                       ((agentData.function !== 'PR Review' && agentData.function !== 'Both') || agentData.branches.length >= 0);
             default:
                 return true;
         }

@@ -30,12 +30,30 @@ const Repositories = () => {
     // 🔄 Fetch repositories from API
     useEffect(() => {
         const fetchRepositories = async () => {
+            setLoading(true); // É bom definir o loading aqui
             try {
                 const res = await fetch('/api/repositories');
+
+                // ---> INÍCIO DA CORREÇÃO <---
+                // Verifica se a resposta da requisição foi bem-sucedida (status 2xx)
+                if (!res.ok) {
+                    // Se não for, lança um erro para ser pego pelo bloco catch
+                    throw new Error(`Erro na API com status: ${res.status}`);
+                }
+
                 const data = await res.json();
-                setRepositories(data);
+                // Garante que os dados recebidos são um array antes de definir o estado
+                if (Array.isArray(data)) {
+                    setRepositories(data);
+                } else {
+                    console.error("Erro: A API não retornou um array.", data);
+                    setRepositories([]); // Define como array vazio para evitar quebras
+                }
+                // ---> FIM DA CORREÇÃO <---
+
             } catch (error) {
                 console.error('Erro ao buscar repositórios:', error);
+                setRepositories([]); // IMPORTANTE: Garante que seja um array em caso de erro
             } finally {
                 setLoading(false);
             }
