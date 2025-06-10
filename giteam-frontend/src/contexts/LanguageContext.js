@@ -20,7 +20,7 @@ export const translations = {
         repositories: 'Repositórios',
         operationHistory: 'Histórico de Operações',
         costs: 'Custos',
-        keys: 'Gerenciamento de Keys',
+        keys: 'Gerenciamento de Chaves de IA',
         signOut: 'Sair',
 
         // Dashboard
@@ -155,6 +155,40 @@ export const translations = {
         'percentageOfTotal': '% do Total',
         'agent': 'Agente',
         'model': 'Modelo',
+
+        settings: {
+            ai_keys: {
+                title: 'Gerencie suas chaves de IA',
+                description: 'Adicione ou edite as chaves de API dos provedores de IA para utilizar agentes em seus repositórios. Suas chaves são criptografadas e armazenadas com segurança.',
+                loading: 'Carregando informações dos provedores e chaves...',
+                configured: 'Configurada',
+                not_configured: 'Não configurada',
+                secret_key: 'Chave secreta',
+                key_secure: 'Sua chave está segura e criptografada.',
+                key_saved: 'Chave do {provider} salva com sucesso!',
+                key_deleted: 'Chave do {provider} removida com sucesso!',
+                saving: 'Salvando...',
+                save: 'Salvar',
+                deleting: 'Excluindo...',
+                delete: 'Excluir',
+                edit: 'Editar',
+                configure: 'Configurar',
+                cancel: 'Cancelar',
+                show: 'Mostrar',
+                hide: 'Ocultar',
+                delete_confirm_title: 'Confirmar exclusão',
+                delete_confirm_message: 'Tem certeza que deseja excluir a chave do provedor {provider}? Essa ação não pode ser desfeita.',
+                invalid_format: 'O formato da chave de {provider} está incorreto.',
+                placeholder: 'Insira sua chave secreta do {provider} para habilitar os agentes.',
+                openai_models: 'Usado para agentes baseados em modelos OpenAI (ex: GPT-4, GPT-4o-mini, etc.)',
+                anthropic_models: 'Usado para agentes baseados em modelos Anthropic (ex: Claude, etc.)',
+                info_title: 'Segurança das suas chaves',
+                info_encrypted: 'Todas as chaves são armazenadas de forma criptografada.',
+                info_security: 'Nunca compartilhamos suas chaves com terceiros.',
+                info_revoke: 'Você pode revogar uma chave a qualquer momento.',
+                info_formats: 'Cada provedor tem um formato específico para a chave.',
+            }
+        }
     },
     'en-US': {
         //Home
@@ -173,7 +207,7 @@ export const translations = {
         repositories: 'Repositories',
         operationHistory: 'Operation History',
         costs: 'Costs',
-        keys: 'Keys Management',
+        keys: 'AI Keys Management',
         signOut: 'Sign out',
 
         // Dashboard
@@ -309,6 +343,40 @@ export const translations = {
         'percentageOfTotal': '% of Total',
         'agent': 'Agent',
         'model': 'Model',
+
+        settings: {
+            ai_keys: {
+                title: 'Manage your AI keys',
+                description: 'Add or edit your AI providers\' API keys to use agents in your repositories. Your keys are encrypted and securely stored.',
+                loading: 'Loading providers and keys information...',
+                configured: 'Configured',
+                not_configured: 'Not configured',
+                secret_key: 'Secret key',
+                key_secure: 'Your key is securely stored and encrypted.',
+                key_saved: '{provider} key saved successfully!',
+                key_deleted: '{provider} key removed successfully!',
+                saving: 'Saving...',
+                save: 'Save',
+                deleting: 'Deleting...',
+                delete: 'Delete',
+                edit: 'Edit',
+                configure: 'Configure',
+                cancel: 'Cancel',
+                show: 'Show',
+                hide: 'Hide',
+                delete_confirm_title: 'Confirm deletion',
+                delete_confirm_message: 'Are you sure you want to delete the {provider} key? This action cannot be undone.',
+                invalid_format: '{provider} key format is incorrect.',
+                placeholder: 'Enter your {provider} secret key to enable agents.',
+                openai_models: 'Used for agents based on OpenAI models (e.g., GPT-4, GPT-4o-mini, etc.)',
+                anthropic_models: 'Used for agents based on Anthropic models (e.g., Claude, etc.)',
+                info_title: 'Your keys\' security',
+                info_encrypted: 'All keys are stored in an encrypted way.',
+                info_security: 'We never share your keys with third parties.',
+                info_revoke: 'You can revoke a key at any time.',
+                info_formats: 'Each provider has its own specific key format.',
+            }
+        }
     }
 };
 
@@ -341,26 +409,26 @@ export const LanguageProvider = ({ children }) => {
         }
     };
 
-    // Função para traduzir textos
     const t = (key, params = {}) => {
-        const text = translations[language][key] || key;
+        const getNested = (obj, path) =>
+            path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined ? acc[part] : undefined), obj);
 
-        // Substituir parâmetros se houver
+        const text = getNested(translations[language], key) || key;
+
         if (Object.keys(params).length > 0) {
             return Object.keys(params).reduce((result, param) => {
                 return result.replace(`{${param}}`, params[param]);
             }, text);
         }
-
         return text;
     };
 
     return (
-        <LanguageContext.Provider value={{ 
-            language, 
+        <LanguageContext.Provider value={{
+            language,
             currentLanguage: language, // Export currentLanguage as well for backwards compatibility
-            changeLanguage, 
-            t 
+            changeLanguage,
+            t
         }}>
             {children}
         </LanguageContext.Provider>
