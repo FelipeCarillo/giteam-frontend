@@ -1,15 +1,12 @@
 // pages/Repositories.jsx
 import React, { useState, useEffect } from 'react';
 import { 
-    Box, Typography, Paper, Button, TextField, Dialog,
-    DialogTitle, DialogContent, DialogActions,
-    InputAdornment, useTheme, Select,
-    FormControl, InputLabel,
+    Box, Typography, Paper, Button, TextField,
+    InputAdornment, useTheme,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
-import GitHubIcon from '@mui/icons-material/GitHub';
 
 import Layout from '../components/layout/Layout';
 import RepositoryCard from '../components/repository/RepositoryCard';
@@ -47,11 +44,6 @@ const Repositories = () => {
     const filteredRepositories = repositories.filter(repo =>
         repo.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-
-    // ➕ Add new repo
-    const handleNavigate = () => {
-        
-    };
 
     // 🧠 Local toggle (pode ser trocado por chamada PATCH futuramente)
     const handleToggleActiveAgent = (agentId) => {
@@ -151,6 +143,6 @@ const Repositories = () => {
             )}
         </Layout>
     );
-};
+}
 
 export default Repositories;
