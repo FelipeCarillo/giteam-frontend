@@ -6,7 +6,35 @@ export const getRepositories = async (agent_id) => {
         const response = await api.get(`/agents/${agent_id}`);
         return response.data;
     } catch (error) {
-        console.error('Error fetching agents:', error);
+        console.error('Error fetching agent:', error);
+        throw error;
+    }
+}
+
+// ✅ Função corrigida para alternar status do agente
+export const toggleAgentStatus = async (agent_id, currentStatus) => {
+    try {
+        // Enviar o novo status (oposto do atual)
+        const newStatus = !currentStatus;
+        
+        const response = await api.put(`/agents/${agent_id}`, {
+            active: newStatus
+        });
+        
+        return response.data;
+    } catch (error) {
+        console.error('Error toggling agent status:', error);
+        throw error;
+    }
+}
+
+// Função para excluir agente
+export const deleteAgent = async (agent_id) => {
+    try {
+        const response = await api.delete(`/agents/${agent_id}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting agent:', error);
         throw error;
     }
 }

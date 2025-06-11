@@ -2,30 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-    Box, 
-    Typography, 
-    Paper, 
-    Button, 
-    Grid, 
-    TextField, 
-    FormControl, 
-    InputLabel, 
-    Select, 
-    MenuItem,
-    Autocomplete,
-    Chip,
-    Radio,
-    RadioGroup,
-    FormControlLabel,
-    FormLabel,
-    Stepper,
-    Step,
-    StepLabel,
-    Divider,
-    Alert,
-    useTheme,
-    Card,
-    CardContent
+    Box, Typography, Paper, Button, Grid, TextField, FormControl, InputLabel, Select, 
+    MenuItem, Autocomplete, Chip, Radio, RadioGroup, FormControlLabel, FormLabel,
+    Stepper, Step, StepLabel, Divider, Alert, useTheme, Card, CardContent,
+    CircularProgress, Backdrop
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -45,6 +25,7 @@ const AgentCreate = () => {
     const location = useLocation();
     const isDarkMode = theme.palette.mode === 'dark';
     const { t, currentLanguage } = useLanguage(); // Get currentLanguage for API call
+    const [isLoading, setIsLoading] = useState(false);
     
     // Pegue o repositoryId do estado da localização, se disponível
     const initialRepoId = location.state?.repositoryId || null;
@@ -65,6 +46,7 @@ const AgentCreate = () => {
     const [availableFunctions, setAvailableFunctions] = useState([]);
     const [availableModels, setAvailableModels] = useState([]);
     const [responseLengthOptions, setResponseLengthOptions] = useState([]);
+    const [isLoadingFunctions, setIsLoadingFunctions] = useState(false);
     
     const borderColor = isDarkMode ? '#30363d' : 'rgba(0,0,0,0.08)';
     const paperBgColor = isDarkMode ? '#161b22' : '#ffffff';
@@ -139,20 +121,70 @@ const AgentCreate = () => {
         ]);
     };
 
+    // Função corrigida para buscar funções disponíveis para um repositório específico
     const fetchAvailableFunctionsForRepository = async (repositoryId) => {
-        const repoData = repositories.find(r => r.id === repositoryId);
-        if (repoData) {
+        setIsLoadingFunctions(true); // ADICIONAR ESTA LINHA
+        try {
             const repo = await getRepositoryById(repositoryId);
-            if (repo.repository) {
-                if (repo.repository.agents.length > 0) {
-                    const existingAgent = repo.repository.agents[0];
-                    if (existingAgent.function === 'Both') {
+            
+            if (repo.repository && repo.repository.agents && repo.repository.agents.length > 0) {
+                const existingAgent = repo.repository.agents[0];
+                const agentFunction = existingAgent.function.toLowerCase();
+                
+                // Normaliza os nomes das funções para comparação
+                const functionMap = {
+                    'both': 'both',
+                    'pr_review': 'pr_review', 
+                    'pr review': 'pr_review',
+                    'issue_resolution': 'issue_resolution',
+                    'issue resolution': 'issue_resolution'
+                };
+                
+                const normalizedFunction = functionMap[agentFunction] || agentFunction;
+                
+                switch (normalizedFunction) {
+                    case 'both':
+                        // Se já tem agente "both", não permite adicionar outros
                         setAvailableFunctions([]);
-                    } else {
-                        setAvailableFunctions(availableFunctions.filter(f => f.id !== existingAgent.function));
-                    }
+                        break;
+                        
+                    case 'pr_review':
+                        // Se tem PR Review, só permite Issue Resolution
+                        setAvailableFunctions([
+                            {
+                                id: 'issue_resolution',
+                                title: t('issueResolutionAgent'),
+                                description: t('issueResolutionDesc')
+                            }
+                        ]);
+                        break;
+                        
+                    case 'issue_resolution':
+                        // Se tem Issue Resolution, só permite PR Review
+                        setAvailableFunctions([
+                            {
+                                id: 'pr_review',
+                                title: t('prReviewAgent'),
+                                description: t('prReviewDesc')
+                            }
+                        ]);
+                        break;
+                        
+                    default:
+                        // Função desconhecida, mostra todas as opções
+                        fetchAgentFunctions();
                 }
+            } else {
+                // Repositório sem agentes, mostra todas as opções
+                fetchAgentFunctions();
             }
+            
+        } catch (error) {
+            console.error('Error fetching repository functions:', error);
+            // Em caso de erro, mostra todas as funções
+            fetchAgentFunctions();
+        } finally {
+            setIsLoadingFunctions(false); // ADICIONAR ESTA LINHA
         }
     };
 
@@ -230,28 +262,29 @@ const AgentCreate = () => {
 
     // Form submission
     const handleSubmit = async () => {
-    try {
-        const payload = {
-            id: agentData.repository,       
-            agents: [
-                {
-                    name: agentData.name,          
-                    function: agentData.function,  
-                    ai_model_id: agentData.model, 
-                    response_length: agentData.responseLength
-                }
-            ]
-        };
+        setIsLoading(true);
+        try {
+            const payload = {
+                id: agentData.repository,       
+                agents: [
+                    {
+                        name: agentData.name,          
+                        function: agentData.function,  
+                        ai_model_id: agentData.model, 
+                        response_length: agentData.responseLength
+                    }
+                ]
+            };
 
-         const response = await api.post('/repositories', payload);
-        console.log('Repositório criado com sucesso:', response.data);
-        // aqui você pode navegar ou exibir um toast de sucesso, por exemplo:
-        navigate(`/repositories/${response.data.id}`);
-    } catch (error) {
-        console.error('Erro ao criar repositório:', error);
-        // opcional: mostrar mensagem de erro ao usuário
-    }
-};
+            const response = await api.post('/repositories', payload);
+            console.log('Repositório criado com sucesso:', response.data);
+            navigate(`/agents/`);
+        } catch (error) {
+            console.error('Erro ao criar repositório:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleCancel = () => {
         navigate(-1);
@@ -261,10 +294,10 @@ const AgentCreate = () => {
     const isStepValid = () => {
         switch (activeStep) {
             case 0: // Repository and Function
-                return agentData.function && agentData.repository;
+                return agentData.function && agentData.repository && !isLoadingFunctions; // ADICIONAR && !isLoadingFunctions
             case 1: // Model and Configuration
                 return agentData.name && agentData.model && 
-                       ((agentData.function !== 'PR Review' && agentData.function !== 'Both') || agentData.branches.length >= 0);
+                    ((agentData.function !== 'PR Review' && agentData.function !== 'Both') || agentData.branches.length >= 0);
             default:
                 return true;
         }
@@ -273,25 +306,29 @@ const AgentCreate = () => {
     // Função para obter o ícone correspondente à função do agente
     const getFunctionIcon = (functionId) => {
         switch(functionId) {
+            case 'pr_review':
             case 'PR Review':
                 return <CodeIcon fontSize="large" sx={{ color: theme.palette.primary.main }} />;
+            case 'issue_resolution':
             case 'Issue Resolution':
                 return <BugReportIcon fontSize="large" sx={{ color: theme.palette.primary.main }} />;
+            case 'both':
             case 'Both':
                 return <SmartToyOutlinedIcon fontSize="large" sx={{ color: theme.palette.primary.main }} />;
             default:
                 return null;
         }
     };
-const formatCost = (cost) => {
-    if (!cost || cost === 0) return '0.000000';
-    if (cost >= 0.000001) {
-        return cost.toFixed(6);
-    } else {
-        // Para valores muito pequenos, mostra em formato decimal com mais casas
-        return cost.toFixed(8);
-    }
-};
+
+    const formatCost = (cost) => {
+        if (!cost || cost === 0) return '0.000000';
+        if (cost >= 0.000001) {
+            return cost.toFixed(6);
+        } else {
+            // Para valores muito pequenos, mostra em formato decimal com mais casas
+            return cost.toFixed(8);
+        }
+    };
 
     // Render step content
     const getStepContent = (step) => {
@@ -337,9 +374,10 @@ const formatCost = (cost) => {
                                     {availableFunctions.map(functionItem => (
                                         <Grid item xs={12} md={4} key={functionItem.id}>
                                             <Card 
-                                                onClick={() => setAgentData({ ...agentData, function: functionItem.id })}
+                                                onClick={() => !isLoadingFunctions && setAgentData({ ...agentData, function: functionItem.id })}
                                                 sx={{ 
-                                                    cursor: 'pointer',
+                                                    cursor: isLoadingFunctions ? 'not-allowed' : 'pointer', // MODIFICAR ESTA LINHA
+                                                    opacity: isLoadingFunctions ? 0.6 : 1, // ADICIONAR ESTA LINHA
                                                     border: `1px solid ${agentData.function === functionItem.id ? 
                                                         theme.palette.primary.main : 
                                                         borderColor}`,
@@ -348,8 +386,8 @@ const formatCost = (cost) => {
                                                         'transparent',
                                                     transition: 'all 0.2s',
                                                     '&:hover': {
-                                                        borderColor: theme.palette.primary.main,
-                                                        transform: 'translateY(-2px)',
+                                                        borderColor: !isLoadingFunctions ? theme.palette.primary.main : borderColor, // MODIFICAR ESTA LINHA
+                                                        transform: !isLoadingFunctions ? 'translateY(-2px)' : 'none', // MODIFICAR ESTA LINHA
                                                     }
                                                 }}
                                             >
@@ -375,6 +413,15 @@ const formatCost = (cost) => {
                                         </Grid>
                                     ))}
                                 </Grid>
+
+                                {isLoadingFunctions && (
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 3 }}>
+                                        <CircularProgress size={24} sx={{ mr: 2 }} />
+                                        <Typography variant="body2" sx={{ color: secondaryTextColor }}>
+                                            {t('loadingFunctions') || 'Carregando funções disponíveis...'}
+                                        </Typography>
+                                    </Box>
+                                )}
                                 
                                 {availableFunctions.length === 0 && agentData.repository && (
                                     <Alert 
@@ -766,9 +813,10 @@ const formatCost = (cost) => {
                                 <Button
                                     variant="contained"
                                     onClick={handleSubmit}
-                                    disabled={!isStepValid()}
+                                    disabled={!isStepValid() || isLoading}
+                                    startIcon={isLoading ? <CircularProgress size={20} /> : null}
                                 >
-                                    {t('createAgent')}
+                                    {isLoading ? (t('creating') || 'Criando...') : t('createAgent')}
                                 </Button>
                             ) : (
                                 <Button
@@ -783,6 +831,25 @@ const formatCost = (cost) => {
                     </Box>
                 </Paper>
             </Box>
+            <Backdrop
+                sx={{ 
+                    color: '#fff', 
+                    zIndex: (theme) => theme.zIndex.drawer + 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2
+                }}
+                open={isLoading}
+            >
+                <CircularProgress color="inherit" size={60} />
+                <Typography variant="h6" sx={{ color: 'white' }}>
+                    {t('creating') }
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                    {t('waiting') }
+                </Typography>
+            </Backdrop>                
+
         </Layout>
     );
 };
