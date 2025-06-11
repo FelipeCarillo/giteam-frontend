@@ -1,4 +1,5 @@
 // contexts/LanguageContext.jsx
+import { create } from '@mui/material/styles/createTransitions';
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 // Definição dos textos em português e inglês
@@ -36,6 +37,26 @@ export const translations = {
         yourRepositoriesAgents: 'Seus Repositórios e Agentes',
         recentOperations: 'Operações Recentes',
         viewAllOperations: 'Ver Todas as Operações',
+
+        //Agent
+        titleAgent: 'Meus Agentes',
+        agentManagement: 'Gerencie seus Agentes',
+        search: 'Pesquise Agentes por nome, repositório ou Modelo IA',
+        statusMenu: 'Todos os Status',
+        statusActive: 'Ativo',
+        statusInactive: 'Inativo',
+        typeMenu: 'Tipos',
+        allTypes: 'Todos os Tipos',
+        prReview: 'Revisão de PR',
+        issueResolution: 'Resolução de Issues',
+        fullService: 'Serviço Completo',
+        createAgentNew: 'Criar Novo Agente',
+        refresh: 'Recarregar',
+        loadAgents: 'Carregando agentes...',
+        agentsFound: 'Nenhum agente encontrado.',
+        agentsConfigured: "You don't have any agents configured yet",
+        firstAgent: 'Crie seu primeiro Agente',
+        agentsMatch: 'Nenhum agente corresponde aos seus filtros atuais.',
 
         // Agent Functions
         prReviewAgent: 'Agente de Revisão de PR',
@@ -109,6 +130,8 @@ export const translations = {
         deactivateAgent: 'Desativar agente',
         activateAgent: 'Ativar agente',
         deleteAgent: 'Excluir agente',
+        repositoryAgentItem: 'Repositório',
+        tokenPerResponse: 'tokens por resposta',
 
         //Operation History
         operationHistoryTitle: 'Histórico de Operações',
@@ -190,6 +213,26 @@ export const translations = {
         recentOperations: 'Recent Operations',
         viewAllOperations: 'View All Operations',
 
+        //Agent
+        titleAgent: 'My Agents',
+        agentManagement: 'Manage Your Agents',
+        search: 'Search agents by name, repository, or AI Model',
+        statusMenu: 'All Statuses',
+        statusActive: 'Active',
+        statusInactive: 'Inactive',
+        typeMenu: 'Types',
+        allTypes: 'All Types',
+        prReview: 'PR Review',
+        issueResolution: 'Issue Resolution',
+        fullService: 'Full Service',
+        createAgentNew: 'Create New Agent',
+        refresh: 'Refresh',
+        loadAgents: 'Loading agents...',
+        agentsFound: 'No agents found.',
+        agentsConfigured: "You don't have any agents configured yet",
+        firstAgent: 'Create your first Agent',
+        agentsMatch: 'No agents match your current filters.',
+
         // Agent Functions
         prReviewAgent: 'PR Review Agent',
         prReviewDesc: 'Automatically reviews Pull Requests, checking code quality, potential bugs, security issues, and adherence to best practices. Comments directly on GitHub with detailed feedback for developers.',
@@ -263,6 +306,8 @@ export const translations = {
         deactivateAgent: 'Deactivate agent',
         activateAgent: 'Activate agent',
         deleteAgent: 'Delete agent',
+        repositoryAgentItem: 'Repository',
+        tokenPerResponse: 'tokens per response',
 
         //Operation History
         operationHistoryTitle: 'Operation History',
