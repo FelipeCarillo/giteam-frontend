@@ -2,7 +2,6 @@
   "name": "giteam-frontend",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:8000",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -15,18 +14,20 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.8.4",
     "date-fns": "^4.1.0",
+    "http-proxy-middleware": "^3.0.5",
+    "process": "^0.11.10",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.4.0",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "recharts": "^2.15.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
+    "eject": "react-app-rewired eject"
   },
   "eslintConfig": {
     "extends": [
@@ -52,7 +53,6 @@
     "crypto-browserify": "^3.12.1",
     "https-browserify": "^1.0.0",
     "os-browserify": "^0.3.0",
-    "process": "^0.11.10",
     "react-app-rewired": "^2.2.1",
     "stream-browserify": "^3.0.0",
     "stream-http": "^3.2.0",
