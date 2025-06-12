@@ -1,81 +1,133 @@
-// pages/Costs.js
-import React, { useState } from 'react';
+// pages/Costs.jsx
+import React, { useState, useEffect } from 'react';
 import { 
-    Box, 
     Typography, 
     Paper, 
     Grid, 
-    FormControl, 
-    InputLabel, 
-    Select, 
-    MenuItem,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
     Alert,
-    useTheme
+    CircularProgress,
+    Box,
+    useTheme,
+    FormControl,
+    Select,
+    MenuItem,
+    InputLabel
 } from '@mui/material';
 import Layout from '../components/layout/Layout';
-import { costHistory, getAllAgents } from '../services/mockData';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getCosts } from '../services/cost';
 
 const Costs = () => {
     const theme = useTheme();
     const isDarkMode = theme.palette.mode === 'dark';
-    const { t } = useLanguage();
+    const { t, language } = useLanguage(); // pegar language do contexto
+    const locale = language || 'pt-BR';
+
+    const [costsData, setCostsData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [hasHistoryData, setHasHistoryData] = useState(false);
     
-    const [timeframe, setTimeframe] = useState('monthly');
-    const [breakdown, setBreakdown] = useState('function');
+    const [selectedOption, setSelectedOption] = useState('');
+    const [dropdownOptions, setDropdownOptions] = useState([]);
+    const [selectedCostItem, setSelectedCostItem] = useState(null);
     
     const borderColor = isDarkMode ? '#30363d' : 'rgba(0,0,0,0.08)';
     const paperBgColor = isDarkMode ? '#161b22' : '#ffffff';
     const primaryTextColor = isDarkMode ? '#f0f6fc' : '#24292e';
     const secondaryTextColor = isDarkMode ? '#8b949e' : '#57606a';
-    
-    // Obter todos os agentes para o detalhamento de custos
-    const agents = getAllAgents();
-    
-    // Verificar se há dados de histórico suficientes
-    const hasHistoryData = costHistory && costHistory.length > 0;
-    const hasComparisonData = costHistory && costHistory.length >= 2;
-    
-    // Calcular o custo total do mês atual e comparação com o mês anterior
-    const currentMonth = hasHistoryData ? costHistory[costHistory.length - 1] : { month: '', pr: 0, issue: 0, total: 0 };
-    const currentMonthCost = currentMonth.total;
-    
-    // Somente calcular comparações se houver dados suficientes
-    let previousMonthCost = 0;
-    let costDifference = 0;
-    let costPercentChange = 0;
-    
-    if (hasComparisonData) {
-        previousMonthCost = costHistory[costHistory.length - 2].total;
-        costDifference = currentMonthCost - previousMonthCost;
-        costPercentChange = previousMonthCost !== 0 ? (costDifference / previousMonthCost) * 100 : 0;
-    }
 
-    // Cores para PR Review e Issue Resolution
-    const prColor = isDarkMode ? '#7ee787' : '#2ea44f';
-    const issueColor = isDarkMode ? '#58a6ff' : '#0366d6';
+    // Função para formatar "2025-04" em "abril de 2025" ou "April 2025" conforme locale
+    const formatMonthYear = (monthString, locale) => {
+        if (!monthString) return '';
+        const [year, month] = monthString.split('-');
+        const date = new Date(year, month - 1);
+        return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(date);
+    };
+
+    const fetchCosts = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const response = await getCosts();
+            const costHistory = response.cost_history || [];
+            setCostsData(costHistory);
+            setHasHistoryData(costHistory.length > 0);
+
+            // Gerar opções do dropdown com base no campo "month"
+            const options = costHistory.map(item => {
+                const [year, month] = item.month.split('-');
+                return {
+                    value: item.month,
+                    label: `${month}/${year}`
+                };
+            }).sort((a, b) => b.value.localeCompare(a.value)); // Mais recentes primeiro
+
+            setDropdownOptions(options);
+
+            // Seleciona o primeiro mês disponível por padrão, se existir
+            if (options.length > 0) {
+                setSelectedOption(options[0].value);
+                const firstItem = costHistory.find(item => item.month === options[0].value);
+                setSelectedCostItem(firstItem);
+            }
+        } catch (err) {
+            console.error('Erro ao buscar custos:', err);
+            setError(err.message || 'Erro ao carregar dados de custos');
+            setHasHistoryData(false);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchCosts();
+    }, []);
+
+    const handleDropdownChange = (event) => {
+        const selectedMonth = event.target.value;
+        setSelectedOption(selectedMonth);
+
+        const selectedItem = costsData.find(item => item.month === selectedMonth);
+        setSelectedCostItem(selectedItem);
+    };
+
+    if (loading) {
+        return (
+            <Layout title={t('costs')}>
+                <Box 
+                    display="flex" 
+                    justifyContent="center" 
+                    alignItems="center" 
+                    minHeight="200px"
+                >
+                    <CircularProgress />
+                </Box>
+            </Layout>
+        );
+    }
 
     return (
         <Layout title={t('costs')}>
-            {!hasHistoryData && (
+            {error && (
+                <Alert 
+                    severity="error" 
+                    sx={{ mb: 3, borderRadius: 2 }}
+                >
+                    {error}
+                </Alert>
+            )}
+            
+            {!hasHistoryData && !error && (
                 <Alert 
                     severity="info" 
-                    sx={{ 
-                        mb: 3,
-                        borderRadius: 2,
-                    }}
+                    sx={{ mb: 3, borderRadius: 2 }}
                 >
                     {t('noHistoricalData')}
                 </Alert>
             )}
             
-            {/* Cost Summary */}
             <Paper 
                 elevation={0}
                 sx={{ 
@@ -89,214 +141,77 @@ const Costs = () => {
                 <Grid container spacing={4}>
                     <Grid item xs={12} md={6}>
                         <Typography variant="h6" fontWeight="500" sx={{ color: primaryTextColor, mb: 2 }}>
-                            {t('currentMonthCosts')}
+                            {t('currentMonthCosts')} {selectedOption && ` ${formatMonthYear(selectedOption, locale)}`}
                         </Typography>
                         <Typography variant="h3" fontWeight="500" sx={{ color: primaryTextColor, mb: 2 }}>
-                            ${currentMonthCost.toFixed(2)}
+                            {selectedCostItem ? `$${selectedCostItem.total_cost.toFixed(2)}` : '$0.00'}
                         </Typography>
-                        
-                        {hasComparisonData && (
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <Typography 
-                                    variant="body2" 
-                                    sx={{ 
-                                        color: costDifference >= 0 ? 
-                                            prColor : 
-                                            (isDarkMode ? '#ff7b72' : '#d73a49')
-                                    }}
-                                >
-                                    {costDifference >= 0 ? '↑' : '↓'} {Math.abs(costPercentChange).toFixed(1)}% 
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: secondaryTextColor, ml: 1 }}>
-                                    {t('fromLastMonth')}
-                                </Typography>
-                            </Box>
-                        )}
                     </Grid>
-                    
-                    {hasHistoryData && (
-                        <Grid item xs={12} md={6}>
-                            <Typography variant="h6" fontWeight="500" sx={{ color: primaryTextColor, mb: 2 }}>
-                                {t('breakdown')}
-                            </Typography>
-                            <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                                <Box sx={{ 
-                                    p: 2, 
-                                    flex: 1,
-                                    borderRadius: 1,
-                                    backgroundColor: isDarkMode ? 'rgba(46, 164, 79, 0.1)' : 'rgba(46, 164, 79, 0.05)',
-                                    border: `1px solid ${isDarkMode ? 'rgba(46, 164, 79, 0.3)' : 'rgba(46, 164, 79, 0.2)'}`,
-                                }}>
-                                    <Typography variant="body2" sx={{ color: secondaryTextColor }}>
-                                        {t('prReviews', { count: '' })}
-                                    </Typography>
-                                    <Typography variant="h5" fontWeight="500" sx={{ color: prColor }}>
-                                        ${currentMonth.pr.toFixed(2)}
-                                    </Typography>
-                                </Box>
-                                <Box sx={{ 
-                                    p: 2, 
-                                    flex: 1,
-                                    borderRadius: 1,
-                                    backgroundColor: isDarkMode ? 'rgba(56, 139, 253, 0.1)' : 'rgba(3, 102, 214, 0.05)',
-                                    border: `1px solid ${isDarkMode ? 'rgba(56, 139, 253, 0.3)' : 'rgba(3, 102, 214, 0.2)'}`,
-                                }}>
-                                    <Typography variant="body2" sx={{ color: secondaryTextColor }}>
-                                        {t('issueResolutions', { count: '' })}
-                                    </Typography>
-                                    <Typography variant="h5" fontWeight="500" sx={{ color: issueColor }}>
-                                        ${currentMonth.issue.toFixed(2)}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        </Grid>
-                    )}
-                </Grid>
-            </Paper>
 
-            {hasHistoryData && (
-                <>
-                    {/* Cost Trends */}
-                    <Paper 
-                        elevation={0}
-                        sx={{ 
-                            p: 3, 
-                            mb: 4, 
-                            borderRadius: 2,
-                            backgroundColor: paperBgColor,
-                            border: `1px solid ${borderColor}`,
-                        }}
-                    >
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                            <Typography variant="h6" fontWeight="500" sx={{ color: primaryTextColor }}>
-                                {t('costTrends')}
-                            </Typography>
-                            <FormControl size="small" sx={{ minWidth: 150 }}>
-                                <InputLabel>{t('timeframe')}</InputLabel>
-                                <Select
-                                    value={timeframe}
-                                    onChange={(e) => setTimeframe(e.target.value)}
-                                    label={t('timeframe')}
-                                >
-                                    <MenuItem value="monthly">{t('monthly')}</MenuItem>
-                                    <MenuItem value="weekly">{t('weekly')}</MenuItem>
-                                    <MenuItem value="daily">{t('daily')}</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Box>
-                        
-                        {/* Tabela de custos por mês */}
-                        <TableContainer>
-                            <Table>
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell sx={{ color: secondaryTextColor, fontWeight: 500 }}>{t('month')}</TableCell>
-                                        <TableCell sx={{ color: secondaryTextColor, fontWeight: 500 }} align="right">{t('prReviews', { count: '' })}</TableCell>
-                                        <TableCell sx={{ color: secondaryTextColor, fontWeight: 500 }} align="right">{t('issueResolutions', { count: '' })}</TableCell>
-                                        <TableCell sx={{ color: secondaryTextColor, fontWeight: 500 }} align="right">{t('total')}</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {costHistory.map((month) => (
-                                        <TableRow key={month.month}>
-                                            <TableCell sx={{ color: primaryTextColor }}>{month.month}</TableCell>
-                                            <TableCell sx={{ color: primaryTextColor }} align="right">${month.pr.toFixed(2)}</TableCell>
-                                            <TableCell sx={{ color: primaryTextColor }} align="right">${month.issue.toFixed(2)}</TableCell>
-                                            <TableCell sx={{ color: primaryTextColor, fontWeight: 500 }} align="right">${month.total.toFixed(2)}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-
-                        {/* Visualização com barras */}
-                        <Box sx={{ mt: 4 }}>
-                            <Typography variant="subtitle2" sx={{ color: primaryTextColor, mb: 2 }}>
-                                {t('monthlyCostDistribution')}
-                            </Typography>
-                            {costHistory.map((month) => (
-                                <Box key={month.month} sx={{ mb: 3 }}>
-                                    <Typography variant="body2" sx={{ color: primaryTextColor, mb: 1, display: 'flex', justifyContent: 'space-between' }}>
-                                        <span>{month.month}</span>
-                                        <span>${month.total.toFixed(2)}</span>
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', height: 20, borderRadius: 1, overflow: 'hidden' }}>
-                                        <Box sx={{ width: `${(month.pr / month.total) * 100}%`, height: '100%', bgcolor: prColor }}></Box>
-                                        <Box sx={{ width: `${(month.issue / month.total) * 100}%`, height: '100%', bgcolor: issueColor }}></Box>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                                        <Typography variant="caption" sx={{ color: prColor }}>
-                                            {t('prReviews', { count: '' })}: ${month.pr.toFixed(2)} ({((month.pr / month.total) * 100).toFixed(1)}%)
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: issueColor }}>
-                                            {t('issueResolutions', { count: '' })}: ${month.issue.toFixed(2)} ({((month.issue / month.total) * 100).toFixed(1)}%)
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            ))}
-                        </Box>
-                    </Paper>
-
-                    {/* Cost Breakdown Table */}
-                    {agents.length > 0 && (
-                        <Paper 
-                            elevation={0}
+                    <Grid item xs={12} md={6} sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start' }}>
+                        <FormControl 
+                            variant="outlined" 
+                            size="small" 
                             sx={{ 
-                                p: 3, 
-                                mb: 4, 
-                                borderRadius: 2,
-                                backgroundColor: paperBgColor,
-                                border: `1px solid ${borderColor}`,
+                                minWidth: 200,
+                                '& .MuiOutlinedInput-root': {
+                                    backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
+                                    '& fieldset': {
+                                        borderColor: borderColor,
+                                    },
+                                    '&:hover fieldset': {
+                                        borderColor: isDarkMode ? '#444c56' : 'rgba(0,0,0,0.23)',
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: theme.palette.primary.main,
+                                    }
+                                },
+                                '& .MuiInputLabel-root': {
+                                    color: secondaryTextColor,
+                                },
+                                '& .MuiSelect-select': {
+                                    color: primaryTextColor,
+                                }
                             }}
                         >
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                <Typography variant="h6" fontWeight="500" sx={{ color: primaryTextColor }}>
-                                    {t('costBreakdown')}
-                                </Typography>
-                                <FormControl size="small" sx={{ minWidth: 150 }}>
-                                    <InputLabel>{t('viewBy')}</InputLabel>
-                                    <Select
-                                        value={breakdown}
-                                        onChange={(e) => setBreakdown(e.target.value)}
-                                        label={t('viewBy')}
-                                    >
-                                        <MenuItem value="function">{t('function')}</MenuItem>
-                                        <MenuItem value="agent">{t('agent')}</MenuItem>
-                                        <MenuItem value="model">{t('model')}</MenuItem>
-                                    </Select>
-                                </FormControl>
-                            </Box>
-                            
-                            <TableContainer>
-                                <Table>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell sx={{ color: secondaryTextColor, fontWeight: 500 }}>{t('name')}</TableCell>
-                                            <TableCell sx={{ color: secondaryTextColor, fontWeight: 500 }}>{t('type')}</TableCell>
-                                            <TableCell sx={{ color: secondaryTextColor, fontWeight: 500 }}>{t('repository')}</TableCell>
-                                            <TableCell sx={{ color: secondaryTextColor, fontWeight: 500 }} align="right">{t('monthlyCost')}</TableCell>
-                                            <TableCell sx={{ color: secondaryTextColor, fontWeight: 500 }} align="right">{t('percentageOfTotal')}</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {agents.map((agent) => (
-                                            <TableRow key={agent.id}>
-                                                <TableCell sx={{ color: primaryTextColor }}>{agent.name}</TableCell>
-                                                <TableCell sx={{ color: secondaryTextColor }}>{agent.function}</TableCell>
-                                                <TableCell sx={{ color: secondaryTextColor }}>{agent.repository}</TableCell>
-                                                <TableCell sx={{ color: primaryTextColor }} align="right">${agent.costMonth.toFixed(2)}</TableCell>
-                                                <TableCell sx={{ color: secondaryTextColor }} align="right">
-                                                    {currentMonthCost > 0 ? ((agent.costMonth / currentMonthCost) * 100).toFixed(1) : 0}%
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        </Paper>
-                    )}
-                </>
-            )}
+                            <InputLabel id="costs-dropdown-label">Selecionar Período</InputLabel>
+                            <Select
+                                labelId="costs-dropdown-label"
+                                id="costs-dropdown"
+                                value={selectedOption}
+                                label="Selecionar Período"
+                                onChange={handleDropdownChange}
+                                MenuProps={{
+                                    PaperProps: {
+                                        sx: {
+                                            backgroundColor: isDarkMode ? '#21262d' : '#ffffff',
+                                            border: `1px solid ${borderColor}`,
+                                            '& .MuiMenuItem-root': {
+                                                color: primaryTextColor,
+                                                '&:hover': {
+                                                    backgroundColor: isDarkMode ? '#30363d' : 'rgba(0,0,0,0.04)',
+                                                },
+                                                '&.Mui-selected': {
+                                                    backgroundColor: isDarkMode ? '#1f6feb' : 'rgba(25, 118, 210, 0.12)',
+                                                    '&:hover': {
+                                                        backgroundColor: isDarkMode ? '#1f6feb' : 'rgba(25, 118, 210, 0.12)',
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }}
+                            >
+                                {dropdownOptions.map((option) => (
+                                    <MenuItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+                </Grid>
+            </Paper>
         </Layout>
     );
 };
