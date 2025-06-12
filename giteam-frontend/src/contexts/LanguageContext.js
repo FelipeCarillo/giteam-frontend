@@ -69,6 +69,15 @@ export const translations = {
         issueResolutionAgentMinimal: 'Resolução de Issues',
         fullServiceAgentMinimal: 'Serviço Completo',
 
+        //Repository
+        repositoryTitle: 'Repositório',
+        repositorySubTitle: 'Repositórios do GitHub',
+        addRepository: 'Adicionar Repositório',
+        searchRepository: 'Pesquisar repositórios',
+        tryAgain: 'tente novamente',
+        addFirstRepository: 'Adicione seu primeiro repositório',
+        loadRepositories: 'Carregando repositórios...',
+
         // Response Length
         concise: 'Conciso',
         conciseDesc: 'Respostas curtas e diretas (40% dos tokens máximos)',
@@ -121,6 +130,8 @@ export const translations = {
         // Repository Card
         addAgent: 'Adicionar Agente',
         noAgentsInRepo: 'Este repositório ainda não possui agentes.',
+        allAgentInRepo: 'Este repositório já possui todos os tipos de agentes permitidos',
+        fullServiceInRepo: 'Este repositório já possui um agente Full-Service',
 
         // Agent Item
         active: 'Ativo',
@@ -244,6 +255,15 @@ export const translations = {
         issueResolutionAgentMinimal: 'Issue Resolution',
         fullServiceAgentMinimal: 'Full Service',
 
+        //Repository
+        repositoryTitle: 'Repository',
+        repositorySubTitle: 'GitHub Repositories',
+        addRepository: 'Add Repository',
+        searchRepository: 'Search Repositories',
+        tryAgain: 'Try Again',
+        addFirstRepository: 'Add your first repository',
+        loadRepositories: 'Loading repositories...',
+
         // Response Length
         concise: 'Concise',
         conciseDesc: 'Short and direct responses (40% of maximum tokens)',
@@ -297,6 +317,9 @@ export const translations = {
         // Repository Card
         addAgent: 'Add Agent',
         noAgentsInRepo: 'This repository has no agents yet.',
+        allAgentInRepo: 'This repository already has all allowed agent types',
+        fullServiceInRepo: 'This repository already has a Full-Service Agent',
+        
 
         // Agent Item
         active: 'Active',
