@@ -20,31 +20,31 @@ import { getCosts } from '../services/cost';
 const Costs = () => {
     const theme = useTheme();
     const isDarkMode = theme.palette.mode === 'dark';
-    const { t } = useLanguage();
-    
-    // Estados para gerenciar os dados e loading
+    const { t, language } = useLanguage(); // pegar language do contexto
+    const locale = language || 'pt-BR';
+
     const [costsData, setCostsData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [hasHistoryData, setHasHistoryData] = useState(false);
     
-    // Estado para o dropdown
     const [selectedOption, setSelectedOption] = useState('');
-    
-    // Dados de exemplo para o dropdown (substitua pelos seus dados reais)
-    const dropdownOptions = [
-        { value: '2025-01', label: '01/2025' },
-        { value: '2025-02', label: '02/2025' },
-        { value: '2025-03', label: '03/2025' },
-        { value: '2025-04', label: '04/2025' }
-    ];
+    const [dropdownOptions, setDropdownOptions] = useState([]);
+    const [selectedCostItem, setSelectedCostItem] = useState(null);
     
     const borderColor = isDarkMode ? '#30363d' : 'rgba(0,0,0,0.08)';
     const paperBgColor = isDarkMode ? '#161b22' : '#ffffff';
     const primaryTextColor = isDarkMode ? '#f0f6fc' : '#24292e';
     const secondaryTextColor = isDarkMode ? '#8b949e' : '#57606a';
-    
-    // Função para buscar os dados de custos
+
+    // Função para formatar "2025-04" em "abril de 2025" ou "April 2025" conforme locale
+    const formatMonthYear = (monthString, locale) => {
+        if (!monthString) return '';
+        const [year, month] = monthString.split('-');
+        const date = new Date(year, month - 1);
+        return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(date);
+    };
+
     const fetchCosts = async () => {
         try {
             setLoading(true);
@@ -53,7 +53,25 @@ const Costs = () => {
             const response = await getCosts();
             const costHistory = response.cost_history || [];
             setCostsData(costHistory);
-            setHasHistoryData(costHistory && costHistory.length > 0);
+            setHasHistoryData(costHistory.length > 0);
+
+            // Gerar opções do dropdown com base no campo "month"
+            const options = costHistory.map(item => {
+                const [year, month] = item.month.split('-');
+                return {
+                    value: item.month,
+                    label: `${month}/${year}`
+                };
+            }).sort((a, b) => b.value.localeCompare(a.value)); // Mais recentes primeiro
+
+            setDropdownOptions(options);
+
+            // Seleciona o primeiro mês disponível por padrão, se existir
+            if (options.length > 0) {
+                setSelectedOption(options[0].value);
+                const firstItem = costHistory.find(item => item.month === options[0].value);
+                setSelectedCostItem(firstItem);
+            }
         } catch (err) {
             console.error('Erro ao buscar custos:', err);
             setError(err.message || 'Erro ao carregar dados de custos');
@@ -62,20 +80,19 @@ const Costs = () => {
             setLoading(false);
         }
     };
-    
-    // Carregar dados ao montar o componente
+
     useEffect(() => {
         fetchCosts();
     }, []);
-    
-    // Handler para mudança no dropdown
+
     const handleDropdownChange = (event) => {
-        setSelectedOption(event.target.value);
-        console.log('Opção selecionada:', event.target.value);
-        // Aqui você pode adicionar a lógica para processar a seleção
+        const selectedMonth = event.target.value;
+        setSelectedOption(selectedMonth);
+
+        const selectedItem = costsData.find(item => item.month === selectedMonth);
+        setSelectedCostItem(selectedItem);
     };
-    
-    // Renderizar loading
+
     if (loading) {
         return (
             <Layout title={t('costs')}>
@@ -90,36 +107,27 @@ const Costs = () => {
             </Layout>
         );
     }
-    
+
     return (
         <Layout title={t('costs')}>
-            {/* Alerta de erro */}
             {error && (
                 <Alert 
                     severity="error" 
-                    sx={{ 
-                        mb: 3,
-                        borderRadius: 2,
-                    }}
+                    sx={{ mb: 3, borderRadius: 2 }}
                 >
                     {error}
                 </Alert>
             )}
             
-            {/* Alerta quando não há dados históricos */}
             {!hasHistoryData && !error && (
                 <Alert 
                     severity="info" 
-                    sx={{ 
-                        mb: 3,
-                        borderRadius: 2,
-                    }}
+                    sx={{ mb: 3, borderRadius: 2 }}
                 >
                     {t('noHistoricalData')}
                 </Alert>
             )}
             
-            {/* Cost Summary */}
             <Paper 
                 elevation={0}
                 sx={{ 
@@ -133,14 +141,13 @@ const Costs = () => {
                 <Grid container spacing={4}>
                     <Grid item xs={12} md={6}>
                         <Typography variant="h6" fontWeight="500" sx={{ color: primaryTextColor, mb: 2 }}>
-                            {t('currentMonthCosts')}
+                            {t('currentMonthCosts')} {selectedOption && ` ${formatMonthYear(selectedOption, locale)}`}
                         </Typography>
                         <Typography variant="h3" fontWeight="500" sx={{ color: primaryTextColor, mb: 2 }}>
-                            $0.00
+                            {selectedCostItem ? `$${selectedCostItem.total_cost.toFixed(2)}` : '$0.00'}
                         </Typography>
                     </Grid>
-                    
-                    {/* Dropdown no canto superior direito */}
+
                     <Grid item xs={12} md={6} sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start' }}>
                         <FormControl 
                             variant="outlined" 

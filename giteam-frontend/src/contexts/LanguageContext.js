@@ -169,7 +169,7 @@ export const translations = {
 
         // Costs
         'noHistoricalData': 'Não há dados históricos de custos disponíveis. Os custos serão exibidos quando houver operações de agentes.',
-        'currentMonthCosts': 'Custos do Mês de:',
+        'currentMonthCosts': 'Custos do Mês:',
         'fromLastMonth': 'em relação ao mês anterior',
         'breakdown': 'Detalhamento',
         'costTrends': 'Tendências de Custo',
@@ -357,7 +357,7 @@ export const translations = {
 
         // Costs
         'noHistoricalData': 'No historical cost data available. Costs will be displayed when there are agent operations.',
-        'currentMonthCosts': "Monthly Costs of:",
+        'currentMonthCosts': "Monthly Costs:",
         'fromLastMonth': 'from last month',
         'breakdown': 'Breakdown',
         'costTrends': 'Cost Trends',
