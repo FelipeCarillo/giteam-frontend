@@ -1,4 +1,5 @@
-import { api, apiGitHub } from './api';
+//services/cost.js
+import { api } from './api';
 
 export const getCosts = async () => {
     try {
