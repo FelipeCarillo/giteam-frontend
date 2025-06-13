@@ -9,42 +9,88 @@ import HistoryIcon from '@mui/icons-material/History';
 import Layout from '../components/layout/Layout';
 import StatCard from '../components/dashboard/StatCard';
 import AgentCreationCard from '../components/dashboard/AgentCreationCard';
-import RepositoryCard from '../components/repository/RepositoryCard';
-import OperationsList from '../components/operations/OperationsList';
 
 import { useLanguage } from '../contexts/LanguageContext';
-import { minimalAgentOptions } from '../services/mockData'; // Pode manter temporariamente até mover para API
+import { minimalAgentOptions } from '../services/mockData';
+import { getRepositories } from '../services/repositories';
+import { getCosts } from '../services/cost'; // Import the cost service
+import { getOperations } from '../services/operation'; // Import operations service
 
 function Dashboard() {
     const navigate = useNavigate();
-    const { t, language } = useLanguage();
+    const { t } = useLanguage();
 
     const [repositories, setRepositories] = useState([]);
     const [operations, setOperations] = useState([]);
+    const [currentMonthCost, setCurrentMonthCost] = useState(0);
     const [loading, setLoading] = useState(true);
+
+    // Função para obter o mês atual no formato YYYY-MM
+    const getCurrentMonth = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        return `${year}-${month}`;
+    };
+
+    // Função para buscar o custo total do mês atual
+    const fetchCurrentMonthCost = async () => {
+        try {
+            const costData = await getCosts();
+            const currentMonth = getCurrentMonth();
+            
+            console.log('📊 Cost data received:', costData);
+            console.log('📊 Current month:', currentMonth);
+            
+            if (costData && costData.cost_history && Array.isArray(costData.cost_history)) {
+                // Procura pelo registro do mês atual
+                const currentMonthData = costData.cost_history.find(
+                    item => item.month === currentMonth
+                );
+                
+                if (currentMonthData) {
+                    console.log('📊 Current month cost data:', currentMonthData);
+                    setCurrentMonthCost(currentMonthData.total_cost || 0);
+                } else {
+                    console.log('📊 No cost data found for current month, using 0');
+                    setCurrentMonthCost(0);
+                }
+            } else {
+                console.warn('📊 Invalid cost data structure:', costData);
+                setCurrentMonthCost(0);
+            }
+        } catch (error) {
+            console.error('📊 Error fetching current month cost:', error);
+            setCurrentMonthCost(0);
+        }
+    };
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [reposRes, opsRes] = await Promise.all([
-                    fetch('/api/repositories'),
-                    fetch('/api/operations')
-                ]);
+                // Buscar dados dos repositórios
+                const reposResponse = await getRepositories();
+                
+                // Buscar operações usando o service
+                const opsResponse = await getOperations();
+                const opsData = opsResponse?.operations || [];
+                
+                const reposData = reposResponse?.repositories || [];
 
-                const [reposData, opsData] = await Promise.all([
-                    reposRes.json(),
-                    opsRes.json()
-                ]);
+                console.log('📊 Repositories data:', reposData);
+                console.log('📊 Operations data:', opsData);
 
-                // Garante que repositories e operations sejam sempre arrays
                 setRepositories(Array.isArray(reposData) ? reposData : []);
                 setOperations(Array.isArray(opsData) ? opsData : []);
 
+                // Buscar custo do mês atual
+                await fetchCurrentMonthCost();
+
             } catch (error) {
                 console.error('Erro ao buscar dados da API:', error);
-                // Em caso de erro, define como arrays vazios para evitar falhas no render
                 setRepositories([]);
                 setOperations([]);
+                setCurrentMonthCost(0);
             } finally {
                 setLoading(false);
             }
@@ -53,76 +99,114 @@ function Dashboard() {
         fetchData();
     }, []);
 
+    // Updated function to count only active agents
     const getActiveAgentsCount = () => {
         if (!Array.isArray(repositories)) {
             return 0;
         }
-        return repositories.reduce((count, repo) => {
-            // Adiciona verificação para repo.agents
-            const activeAgentsInRepo = Array.isArray(repo.agents) ? repo.agents.filter(agent => agent.active).length : 0;
-            return count + activeAgentsInRepo;
-        }, 0);
+        
+        let totalActiveAgents = 0;
+        
+        repositories.forEach(repo => {
+            if (Array.isArray(repo.agents)) {
+                const activeAgentsInRepo = repo.agents.filter(agent => agent.active === true);
+                totalActiveAgents += activeAgentsInRepo.length;
+                
+                // Debug logging
+                console.log(`📊 Repository "${repo.name}":`, {
+                    totalAgents: repo.agents.length,
+                    activeAgents: activeAgentsInRepo.length,
+                    agents: repo.agents.map(agent => ({ 
+                        name: agent.name, 
+                        active: agent.active 
+                    }))
+                });
+            }
+        });
+        
+        console.log('📊 Total active agents across all repositories:', totalActiveAgents);
+        return totalActiveAgents;
     };
 
-    const getTotalMonthlyCost = () => {
+    // New function to count repositories that have active agents
+    const getRepositoriesWithActiveAgentsCount = () => {
+        if (!Array.isArray(repositories)) {
+            return 0;
+        }
+        
+        const reposWithActiveAgents = repositories.filter(repo => {
+            if (!Array.isArray(repo.agents)) {
+                return false;
+            }
+            
+            // Check if this repository has at least one active agent
+            return repo.agents.some(agent => agent.active === true);
+        });
+        
+        console.log('📊 Repositories with active agents:', reposWithActiveAgents.length);
+        return reposWithActiveAgents.length;
+    };
+
+    // Função para calcular custo estimado baseado nos agentes (mantida como fallback)
+    const getEstimatedMonthlyCost = () => {
         if (!Array.isArray(repositories)) {
             return 0;
         }
         return repositories.reduce((total, repo) => {
-            // Adiciona verificação para repo.agents
-            const costInRepo = Array.isArray(repo.agents) ? repo.agents.reduce((sum, agent) => sum + (agent.costMonth || 0), 0) : 0;
+            const costInRepo = Array.isArray(repo.agents) ? 
+                repo.agents
+                    .filter(agent => agent.active === true)
+                    .reduce((sum, agent) => sum + (agent.costMonth || 0), 0) : 0;
             return total + costInRepo;
         }, 0);
     };
 
+    // Função atualizada para contar operações baseada nos dados reais da API
     const getOperationsByType = () => {
         if (!Array.isArray(operations)) {
-            return { prReviews: 0, issueResolutions: 0 };
+            return { 
+                total: 0,
+                prReviews: 0, 
+                issueResolutions: 0 
+            };
         }
-        const prReviews = operations.filter(op => op.icon === 'CodeIcon').length;
-        const issueResolutions = operations.filter(op => op.icon === 'BugReportIcon').length;
-        return { prReviews, issueResolutions };
-    };
 
-    const handleAddAgent = (repoId) => {
-        navigate('/agents/create', { state: { repositoryId: repoId } });
-    };
+        // Conta operações baseado no campo 'action' dos dados reais
+        const prReviews = operations.filter(op => op.action === 'PR Review').length;
+        const issueResolutions = operations.filter(op => op.action === 'Issue Resolution').length;
+        const total = operations.length;
 
-    const handleToggleActiveAgent = (agentId) => {
-        const updatedRepositories = repositories.map(repo => {
-            const updatedAgents = Array.isArray(repo.agents) ? repo.agents.map(agent => {
-                if (agent.id === agentId) {
-                    return { ...agent, active: !agent.active };
-                }
-                return agent;
-            }) : [];
-            return { ...repo, agents: updatedAgents };
+        console.log('📊 Operations breakdown:', {
+            total,
+            prReviews,
+            issueResolutions,
+            operations: operations.map(op => ({ 
+                id: op.id, 
+                action: op.action, 
+                status: op.status 
+            }))
         });
-        setRepositories(updatedRepositories);
-    };
 
-    const handleDeleteAgent = (agentId) => {
-        const updatedRepositories = repositories.map(repo => ({
-            ...repo,
-            agents: Array.isArray(repo.agents) ? repo.agents.filter(agent => agent.id !== agentId) : []
-        }));
-        setRepositories(updatedRepositories);
-    };
-
-    const handleViewAllOperations = () => {
-        navigate('/operations');
+        return { 
+            total,
+            prReviews, 
+            issueResolutions 
+        };
     };
 
     if (loading) {
         return <Layout title={t('dashboard')}><Typography>{t('loading')}...</Typography></Layout>;
     }
 
-    // As chamadas de função agora são mais seguras
+    // Updated calculations
     const activeAgentsCount = getActiveAgentsCount();
-    const repoCount = Array.isArray(repositories) ? repositories.length : 0;
-    const monthlyCost = getTotalMonthlyCost();
-    const { prReviews, issueResolutions } = getOperationsByType();
-    const recentOperations = Array.isArray(operations) ? operations.slice(0, 3) : [];
+    const reposWithActiveAgentsCount = getRepositoriesWithActiveAgentsCount();
+    const totalRepoCount = Array.isArray(repositories) ? repositories.length : 0;
+    const estimatedMonthlyCost = getEstimatedMonthlyCost();
+    const { total, prReviews, issueResolutions } = getOperationsByType();
+
+    // Usa o custo real do mês atual da API, ou o estimado como fallback
+    const displayCost = currentMonthCost > 0 ? currentMonthCost : estimatedMonthlyCost;
 
     return (
         <Layout title={t('dashboard')}>
@@ -134,23 +218,23 @@ function Dashboard() {
                             icon={<SmartToyOutlinedIcon />}
                             title={t('activeAgents')}
                             value={activeAgentsCount}
-                            subtitle={t('acrossRepositories', { count: repoCount })}
+                            subtitle={t('acrossRepositories', { count: reposWithActiveAgentsCount })}
                         />
                     </Grid>
                     <Grid item xs={12} md={4}>
                         <StatCard
                             icon={<PaidIcon />}
                             title={t('monthCost')}
-                            value={`$${monthlyCost.toFixed(2)}`}
-                            subtitle={t('operationCosts')}
+                            value={`$${displayCost.toFixed(2)}`}
+                            //subtitle={currentMonthCost > 0 ? t('actualCosts') : t('estimatedCosts')}
                         />
                     </Grid>
                     <Grid item xs={12} md={4}>
                         <StatCard
                             icon={<HistoryIcon />}
                             title={t('operationsThisWeek')}
-                            value={Array.isArray(operations) ? operations.length : 0}
-                            subtitle={`${t('prReviews', { count: prReviews })} | ${t('issueResolutions', { count: issueResolutions })}`}
+                            value={total}
+                            subtitle={`${prReviews} PR Reviews | ${issueResolutions} Issue Resolutions`}
                         />
                     </Grid>
                 </Grid>
@@ -158,41 +242,12 @@ function Dashboard() {
 
             {/* Create New Agent */}
             <AgentCreationCard
-                agentOptions={minimalAgentOptions} //
+                agentOptions={minimalAgentOptions}
                 title={t('createNewAgent')}
                 description={t('createAgentDesc')}
             />
-
-            {/* Repositories */}
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" fontWeight="500" gutterBottom sx={{ mb: 2 }}>
-                    {t('yourRepositoriesAgents')}
-                </Typography>
-                {Array.isArray(repositories) && repositories.map(repo => (
-                    <RepositoryCard
-                        key={repo.id}
-                        repository={repo}
-                        onAddAgent={handleAddAgent}
-                        onToggleActiveAgent={handleToggleActiveAgent}
-                        onDeleteAgent={handleDeleteAgent}
-                    />
-                ))}
-            </Box>
-
-            {/* Recent Operations */}
-            <Box>
-                <Typography variant="h6" fontWeight="500" gutterBottom sx={{ mb: 2 }}>
-                    {t('recentOperations')}
-                </Typography>
-                <OperationsList
-                    key={language}
-                    operations={recentOperations}
-                    showViewAll={true}
-                    onViewAll={handleViewAllOperations}
-                />
-            </Box>
         </Layout>
     );
 }
 
-export default Dashboard;
+export default Dashboard;

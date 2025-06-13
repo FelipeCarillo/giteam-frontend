@@ -15,10 +15,12 @@ import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { agentFunctions, availableModels, responseLengthOptions } from '../../services/mockData';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const AgentItem = ({ agent, repository, onToggleActive, onDelete }) => {
     const theme = useTheme();
     const isDarkMode = theme.palette.mode === 'dark';
+    const { t } = useLanguage();
 
     const borderColor = isDarkMode ? '#30363d' : 'rgba(0,0,0,0.08)';
     const primaryTextColor = isDarkMode ? '#f0f6fc' : '#24292e';
@@ -104,7 +106,7 @@ const AgentItem = ({ agent, repository, onToggleActive, onDelete }) => {
                                     {safeAgent.name}
                                 </Typography>
                                 <Chip
-                                    label={safeAgent.active ? 'Ativo' : 'Inativo'}
+                                    label={safeAgent.active ? t('active') : t('inactive')}
                                     size="small"
                                     sx={{
                                         backgroundColor: safeAgent.active ?
@@ -121,7 +123,7 @@ const AgentItem = ({ agent, repository, onToggleActive, onDelete }) => {
                             </Typography>
                             {repository && (
                                 <Typography variant="body2" sx={{ color: secondaryTextColor, mt: 0.5 }}>
-                                    Repositório: {repository}
+                                    {t('repositoryAgentItem')}: {repository}
                                 </Typography>
                             )}
                         </Box>
@@ -150,18 +152,23 @@ const AgentItem = ({ agent, repository, onToggleActive, onDelete }) => {
                     )}
                     <Box sx={{ mt: 2 }}>
                         <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 0.5 }}>
-                            Configuração da resposta:
+                            {t('responseConfig')}
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Chip
-                                label={responseLengthDetails?.title || 'Médio'}
+                                label={
+                                    responseLengthDetails?.id === 'concise' ? t('concise') :
+                                    responseLengthDetails?.id === 'medium' ? t('medium') :
+                                    responseLengthDetails?.id === 'detailed' ? t('detailed') :
+                                    t('medium') // fallback padrão
+                                }
                                 size="small"
                                 sx={{
                                     backgroundColor: isDarkMode ? 'rgba(56, 139, 253, 0.15)' : 'rgba(3, 102, 214, 0.1)',
                                     color: isDarkMode ? '#58a6ff' : '#0366d6',
                                 }}
                             />
-                            <Tooltip title={`${formatNumber(tokensUsed)} tokens por resposta`}>
+                            <Tooltip title={`${formatNumber(tokensUsed)} ${t('tokenPerResponse')}`}>
                                 <IconButton size="small">
                                     <InfoOutlinedIcon fontSize="small" sx={{ color: secondaryTextColor }} />
                                 </IconButton>
@@ -173,7 +180,7 @@ const AgentItem = ({ agent, repository, onToggleActive, onDelete }) => {
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, height: '100%', alignItems: 'center' }}>
                         <Box>
                             <Typography variant="body2" sx={{ color: secondaryTextColor, textAlign: 'right' }}>
-                                Custo este mês:
+                                {t('costThisMonth')}
                             </Typography>
                             <Typography variant="subtitle1" fontWeight="500" sx={{ color: primaryTextColor, textAlign: 'right' }}>
                                 ${formatCurrency(safeAgent.costMonth)}
@@ -189,7 +196,7 @@ const AgentItem = ({ agent, repository, onToggleActive, onDelete }) => {
                                 border: `1px solid ${borderColor}`,
                                 marginLeft: 1
                             }}
-                            title={safeAgent.active ? "Desativar agente" : "Ativar agente"}
+                            title={safeAgent.active ? t('deactivateAgent') : t('activateAgent')}
                         >
                             <PowerSettingsNewIcon fontSize="small" />
                         </IconButton>
@@ -200,7 +207,7 @@ const AgentItem = ({ agent, repository, onToggleActive, onDelete }) => {
                                 color: isDarkMode ? '#ff7b72' : '#d73a49',
                                 border: `1px solid ${borderColor}`
                             }}
-                            title="Excluir agente"
+                            title={t('deleteAgent')}
                         >
                             <DeleteOutlineIcon fontSize="small" />
                         </IconButton>

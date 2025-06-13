@@ -1,4 +1,5 @@
 // contexts/LanguageContext.jsx
+import { create } from '@mui/material/styles/createTransitions';
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 // Definição dos textos em português e inglês
@@ -37,6 +38,26 @@ export const translations = {
         recentOperations: 'Operações Recentes',
         viewAllOperations: 'Ver Todas as Operações',
 
+        //Agent
+        titleAgent: 'Meus Agentes',
+        agentManagement: 'Gerencie seus Agentes',
+        search: 'Pesquise Agentes por nome, repositório ou Modelo IA',
+        statusMenu: 'Todos os Status',
+        statusActive: 'Ativo',
+        statusInactive: 'Inativo',
+        typeMenu: 'Tipos',
+        allTypes: 'Todos os Tipos',
+        prReview: 'Revisão de PR',
+        issueResolution: 'Resolução de Issues',
+        fullService: 'Serviço Completo',
+        createAgentNew: 'Criar Novo Agente',
+        refresh: 'Recarregar',
+        loadAgents: 'Carregando agentes...',
+        agentsFound: 'Nenhum agente encontrado.',
+        agentsConfigured: "You don't have any agents configured yet",
+        firstAgent: 'Crie seu primeiro Agente',
+        agentsMatch: 'Nenhum agente corresponde aos seus filtros atuais.',
+
         // Agent Functions
         prReviewAgent: 'Agente de Revisão de PR',
         prReviewDesc: 'Revisa Pull Requests automaticamente, verificando a qualidade do código, possíveis bugs, problemas de segurança e aderência às boas práticas. Comenta diretamente no GitHub com feedback detalhado para os desenvolvedores.',
@@ -47,6 +68,15 @@ export const translations = {
         prReviewAgentMinimal: 'Revisão de PRs',
         issueResolutionAgentMinimal: 'Resolução de Issues',
         fullServiceAgentMinimal: 'Serviço Completo',
+
+        //Repository
+        repositoryTitle: 'Repositório',
+        repositorySubTitle: 'Repositórios do GitHub',
+        addRepository: 'Adicionar Repositório',
+        searchRepository: 'Pesquisar repositórios',
+        tryAgain: 'tente novamente',
+        addFirstRepository: 'Adicione seu primeiro repositório',
+        loadRepositories: 'Carregando repositórios...',
 
         // Response Length
         concise: 'Conciso',
@@ -100,6 +130,8 @@ export const translations = {
         // Repository Card
         addAgent: 'Adicionar Agente',
         noAgentsInRepo: 'Este repositório ainda não possui agentes.',
+        allAgentInRepo: 'Este repositório já possui todos os tipos de agentes permitidos',
+        fullServiceInRepo: 'Este repositório já possui um agente Full-Service',
 
         // Agent Item
         active: 'Ativo',
@@ -109,6 +141,8 @@ export const translations = {
         deactivateAgent: 'Desativar agente',
         activateAgent: 'Ativar agente',
         deleteAgent: 'Excluir agente',
+        repositoryAgentItem: 'Repositório',
+        tokenPerResponse: 'tokens por resposta',
 
         //Operation History
         operationHistoryTitle: 'Histórico de Operações',
@@ -135,7 +169,7 @@ export const translations = {
 
         // Costs
         'noHistoricalData': 'Não há dados históricos de custos disponíveis. Os custos serão exibidos quando houver operações de agentes.',
-        'currentMonthCosts': 'Custos do Mês Atual',
+        'currentMonthCosts': 'Custos do Mês:',
         'fromLastMonth': 'em relação ao mês anterior',
         'breakdown': 'Detalhamento',
         'costTrends': 'Tendências de Custo',
@@ -224,6 +258,26 @@ export const translations = {
         recentOperations: 'Recent Operations',
         viewAllOperations: 'View All Operations',
 
+        //Agent
+        titleAgent: 'My Agents',
+        agentManagement: 'Manage Your Agents',
+        search: 'Search agents by name, repository, or AI Model',
+        statusMenu: 'All Statuses',
+        statusActive: 'Active',
+        statusInactive: 'Inactive',
+        typeMenu: 'Types',
+        allTypes: 'All Types',
+        prReview: 'PR Review',
+        issueResolution: 'Issue Resolution',
+        fullService: 'Full Service',
+        createAgentNew: 'Create New Agent',
+        refresh: 'Refresh',
+        loadAgents: 'Loading agents...',
+        agentsFound: 'No agents found.',
+        agentsConfigured: "You don't have any agents configured yet",
+        firstAgent: 'Create your first Agent',
+        agentsMatch: 'No agents match your current filters.',
+
         // Agent Functions
         prReviewAgent: 'PR Review Agent',
         prReviewDesc: 'Automatically reviews Pull Requests, checking code quality, potential bugs, security issues, and adherence to best practices. Comments directly on GitHub with detailed feedback for developers.',
@@ -234,6 +288,15 @@ export const translations = {
         prReviewAgentMinimal: 'PR Review',
         issueResolutionAgentMinimal: 'Issue Resolution',
         fullServiceAgentMinimal: 'Full Service',
+
+        //Repository
+        repositoryTitle: 'Repository',
+        repositorySubTitle: 'GitHub Repositories',
+        addRepository: 'Add Repository',
+        searchRepository: 'Search Repositories',
+        tryAgain: 'Try Again',
+        addFirstRepository: 'Add your first repository',
+        loadRepositories: 'Loading repositories...',
 
         // Response Length
         concise: 'Concise',
@@ -288,6 +351,9 @@ export const translations = {
         // Repository Card
         addAgent: 'Add Agent',
         noAgentsInRepo: 'This repository has no agents yet.',
+        allAgentInRepo: 'This repository already has all allowed agent types',
+        fullServiceInRepo: 'This repository already has a Full-Service Agent',
+        
 
         // Agent Item
         active: 'Active',
@@ -297,6 +363,8 @@ export const translations = {
         deactivateAgent: 'Deactivate agent',
         activateAgent: 'Activate agent',
         deleteAgent: 'Delete agent',
+        repositoryAgentItem: 'Repository',
+        tokenPerResponse: 'tokens per response',
 
         //Operation History
         operationHistoryTitle: 'Operation History',
@@ -323,7 +391,7 @@ export const translations = {
 
         // Costs
         'noHistoricalData': 'No historical cost data available. Costs will be displayed when there are agent operations.',
-        'currentMonthCosts': "Current Month's Costs",
+        'currentMonthCosts': "Monthly Costs:",
         'fromLastMonth': 'from last month',
         'breakdown': 'Breakdown',
         'costTrends': 'Cost Trends',

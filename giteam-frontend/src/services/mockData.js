@@ -128,10 +128,11 @@ export const repositories = [
 
 // Agent models available
 export const availableModels = [
-    { id: 'gpt-4', name: 'GPT-4', provider: 'OpenAI', costPerToken: 0.00006, specialties: ['Code', 'Reasoning'], maxTokens: 8000 },
-    { id: 'gpt-3.5', name: 'GPT-3.5', provider: 'OpenAI', costPerToken: 0.00001, specialties: ['Speed', 'General'], maxTokens: 4000 },
-    { id: 'claude-3', name: 'Claude 3', provider: 'Anthropic', costPerToken: 0.00005, specialties: ['Documentation', 'Reasoning'], maxTokens: 7000 },
-    { id: 'llama-3', name: 'Llama 3', provider: 'Meta', costPerToken: 0.000015, specialties: ['Open Source', 'General'], maxTokens: 4000 },
+    { id: '1', name: 'gpt-4o'},
+    { id: '2', name: 'gpt-4o-mini'},
+    { id: '3', name: 'gpt-4.1'},
+    { id: '4', name: 'claude-3-7-sonnet'},
+    { id: '5', name: 'claude-3-5-haiku'},
 ];
 
 // O resto do código permanece o mesmo...

@@ -217,6 +217,7 @@ const Settings = () => {
     };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   const handleChange = pr => e => {
     setKeys(prev => ({ ...prev, [pr]: { ...prev[pr], value: e.target.value } }));
     setError(''); 
@@ -663,6 +664,25 @@ const Settings = () => {
             setSaving(false);
         }
     };
+=======
+    //Deletar
+  const handleDelete = async pr => {
+  setSaving(true);
+  setError(''); setSuccess('');
+  try {
+    await api.delete('/user/provider/secret-key', {
+      data: { provider: pr }
+    });
+    setSuccess(`Chave de ${pr} apagada com sucesso.`);
+    setKeys(prev => ({ ...prev, [pr]: { value: '', exists: false, id: null } }));
+    setEditing(prev => ({ ...prev, [pr]: false }));
+  } catch (err) {
+    setError(`Erro ao apagar chave de ${pr}.`);
+  } finally {
+    setSaving(false);
+  }
+};
+>>>>>>> 4ba1b2f3504ede9bd9fab6867046dc0a419f2c86
 
     // ---> CORREÇÃO AQUI <---
     // Este bloco agora está no lugar certo.
