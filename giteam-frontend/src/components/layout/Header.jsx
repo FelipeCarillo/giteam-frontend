@@ -90,8 +90,6 @@ const Header = ({ title, toggleDrawer, user }) => {
         return t ? t('signOut') : (language === 'pt-BR' ? 'Sair' : 'Sign Out');
     };
 
-    console.log('Header user:', user); // Debugging line
-
     return (
         <AppBar
             position="sticky"

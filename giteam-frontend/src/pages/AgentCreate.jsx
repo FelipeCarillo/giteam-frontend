@@ -1,8 +1,8 @@
 // pages/AgentCreate.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-    Box, Typography, Paper, Button, Grid, TextField, FormControl, InputLabel, Select, 
+import {
+    Box, Typography, Paper, Button, Grid, TextField, FormControl, InputLabel, Select,
     MenuItem, Autocomplete, Chip, Radio, RadioGroup, FormControlLabel, FormLabel,
     Stepper, Step, StepLabel, Divider, Alert, useTheme, Card, CardContent,
     CircularProgress, Backdrop
@@ -26,10 +26,10 @@ const AgentCreate = () => {
     const isDarkMode = theme.palette.mode === 'dark';
     const { t, currentLanguage } = useLanguage(); // Get currentLanguage for API call
     const [isLoading, setIsLoading] = useState(false);
-    
+
     // Pegue o repositoryId do estado da localização, se disponível
     const initialRepoId = location.state?.repositoryId || null;
-    
+
     const [activeStep, setActiveStep] = useState(0);
     const [agentData, setAgentData] = useState({
         name: '',
@@ -47,7 +47,7 @@ const AgentCreate = () => {
     const [availableModels, setAvailableModels] = useState([]);
     const [responseLengthOptions, setResponseLengthOptions] = useState([]);
     const [isLoadingFunctions, setIsLoadingFunctions] = useState(false);
-    
+
     const borderColor = isDarkMode ? '#30363d' : 'rgba(0,0,0,0.08)';
     const paperBgColor = isDarkMode ? '#161b22' : '#ffffff';
     const primaryTextColor = isDarkMode ? '#f0f6fc' : '#24292e';
@@ -59,35 +59,25 @@ const AgentCreate = () => {
     // Carrega dados da API quando o componente montar
     useEffect(() => {
         // Aqui você faria chamadas à API real para carregar os dados
-        fetchRepositories();
-        fetchAgentFunctions();
-        fetchAvailableModels();
-        fetchResponseLengthOptions();
+        Promise.all([
+            fetchRepositories(),
+            fetchAgentFunctions(),
+            fetchAvailableModels(),
+            fetchResponseLengthOptions(),
+        ]).catch(error => {
+            console.error('Error fetching initial data:', error);
+        });
     }, []);
 
     // Efeito para atualizar funções disponíveis quando o repositório muda
     useEffect(() => {
         if (agentData.repository) {
             fetchAvailableFunctionsForRepository(agentData.repository);
-            
-            // Em uma implementação real, você obteria os branches padrão do repositório
-            // Por enquanto, vamos definir 'main' como branch padrão
             setAgentData(prev => ({ ...prev, branches: ['main'] }));
         } else {
-            // Quando nenhum repositório é selecionado, mostrar todas as funções
             fetchAgentFunctions();
         }
     }, [agentData.repository]);
-
-    // Efeito para atualizar as traduções quando o idioma muda
-    useEffect(() => {
-        fetchAgentFunctions();
-        fetchResponseLengthOptions();
-        fetchAvailableModels(); // Re-fetch models when language changes
-        if (agentData.repository) {
-            fetchAvailableFunctionsForRepository(agentData.repository);
-        }
-    }, [t, currentLanguage]); // Added currentLanguage dependency
 
     // Funções para buscar dados da API
     const fetchRepositories = async () => {
@@ -126,28 +116,28 @@ const AgentCreate = () => {
         setIsLoadingFunctions(true); // ADICIONAR ESTA LINHA
         try {
             const repo = await getRepositoryById(repositoryId);
-            
+
             if (repo.repository && repo.repository.agents && repo.repository.agents.length > 0) {
                 const existingAgent = repo.repository.agents[0];
                 const agentFunction = existingAgent.function.toLowerCase();
-                
+
                 // Normaliza os nomes das funções para comparação
                 const functionMap = {
                     'both': 'both',
-                    'pr_review': 'pr_review', 
+                    'pr_review': 'pr_review',
                     'pr review': 'pr_review',
                     'issue_resolution': 'issue_resolution',
                     'issue resolution': 'issue_resolution'
                 };
-                
+
                 const normalizedFunction = functionMap[agentFunction] || agentFunction;
-                
+
                 switch (normalizedFunction) {
                     case 'both':
                         // Se já tem agente "both", não permite adicionar outros
                         setAvailableFunctions([]);
                         break;
-                        
+
                     case 'pr_review':
                         // Se tem PR Review, só permite Issue Resolution
                         setAvailableFunctions([
@@ -158,7 +148,7 @@ const AgentCreate = () => {
                             }
                         ]);
                         break;
-                        
+
                     case 'issue_resolution':
                         // Se tem Issue Resolution, só permite PR Review
                         setAvailableFunctions([
@@ -169,7 +159,7 @@ const AgentCreate = () => {
                             }
                         ]);
                         break;
-                        
+
                     default:
                         // Função desconhecida, mostra todas as opções
                         fetchAgentFunctions();
@@ -178,7 +168,7 @@ const AgentCreate = () => {
                 // Repositório sem agentes, mostra todas as opções
                 fetchAgentFunctions();
             }
-            
+
         } catch (error) {
             console.error('Error fetching repository functions:', error);
             // Em caso de erro, mostra todas as funções
@@ -203,7 +193,7 @@ const AgentCreate = () => {
             setAvailableModels([]);
         }
     };
-    
+
 
     const fetchResponseLengthOptions = async () => {
         // Em uma implementação real, isso seria uma chamada à API
@@ -265,12 +255,12 @@ const AgentCreate = () => {
         setIsLoading(true);
         try {
             const payload = {
-                id: agentData.repository,       
+                id: agentData.repository,
                 agents: [
                     {
-                        name: agentData.name,          
-                        function: agentData.function,  
-                        ai_model_id: agentData.model, 
+                        name: agentData.name,
+                        function: agentData.function,
+                        ai_model_id: agentData.model,
                         response_length: agentData.responseLength
                     }
                 ]
@@ -296,7 +286,7 @@ const AgentCreate = () => {
             case 0: // Repository and Function
                 return agentData.function && agentData.repository && !isLoadingFunctions; // ADICIONAR && !isLoadingFunctions
             case 1: // Model and Configuration
-                return agentData.name && agentData.model && 
+                return agentData.name && agentData.model &&
                     ((agentData.function !== 'PR Review' && agentData.function !== 'Both') || agentData.branches.length >= 0);
             default:
                 return true;
@@ -305,7 +295,7 @@ const AgentCreate = () => {
 
     // Função para obter o ícone correspondente à função do agente
     const getFunctionIcon = (functionId) => {
-        switch(functionId) {
+        switch (functionId) {
             case 'pr_review':
             case 'PR Review':
                 return <CodeIcon fontSize="large" sx={{ color: theme.palette.primary.main }} />;
@@ -342,7 +332,7 @@ const AgentCreate = () => {
                         <Typography variant="body2" sx={{ mb: 3, color: secondaryTextColor }}>
                             {t('repoAgentLimit')}
                         </Typography>
-                        
+
                         <Grid container spacing={3}>
                             <Grid item xs={12}>
                                 <FormControl fullWidth>
@@ -354,8 +344,8 @@ const AgentCreate = () => {
                                     >
                                         <MenuItem value="">{t('selectRepository')}</MenuItem>
                                         {repositories.map(repo => (
-                                            <MenuItem 
-                                                key={repo.id} 
+                                            <MenuItem
+                                                key={repo.id}
                                                 value={repo.id}
                                             >
                                                 {repo.name}
@@ -364,22 +354,22 @@ const AgentCreate = () => {
                                     </Select>
                                 </FormControl>
                             </Grid>
-                            
+
                             <Grid item xs={12}>
                                 <Typography variant="subtitle1" sx={{ mb: 2, color: primaryTextColor }}>
                                     {t('selectAgentFunction')}
                                 </Typography>
-                                
+
                                 <Grid container spacing={2}>
                                     {availableFunctions.map(functionItem => (
                                         <Grid item xs={12} md={4} key={functionItem.id}>
-                                            <Card 
+                                            <Card
                                                 onClick={() => !isLoadingFunctions && setAgentData({ ...agentData, function: functionItem.id })}
-                                                sx={{ 
+                                                sx={{
                                                     cursor: isLoadingFunctions ? 'not-allowed' : 'pointer', // MODIFICAR ESTA LINHA
                                                     opacity: isLoadingFunctions ? 0.6 : 1, // ADICIONAR ESTA LINHA
-                                                    border: `1px solid ${agentData.function === functionItem.id ? 
-                                                        theme.palette.primary.main : 
+                                                    border: `1px solid ${agentData.function === functionItem.id ?
+                                                        theme.palette.primary.main :
                                                         borderColor}`,
                                                     backgroundColor: agentData.function === functionItem.id ?
                                                         (isDarkMode ? 'rgba(46, 164, 79, 0.1)' : 'rgba(46, 164, 79, 0.05)') :
@@ -394,10 +384,10 @@ const AgentCreate = () => {
                                                 <CardContent>
                                                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                                                         {getFunctionIcon(functionItem.id)}
-                                                        <Typography 
-                                                            variant="h6" 
-                                                            sx={{ 
-                                                                ml: 1, 
+                                                        <Typography
+                                                            variant="h6"
+                                                            sx={{
+                                                                ml: 1,
                                                                 color: primaryTextColor,
                                                                 fontWeight: agentData.function === functionItem.id ? 600 : 500
                                                             }}
@@ -422,10 +412,10 @@ const AgentCreate = () => {
                                         </Typography>
                                     </Box>
                                 )}
-                                
+
                                 {availableFunctions.length === 0 && agentData.repository && (
-                                    <Alert 
-                                        severity="info" 
+                                    <Alert
+                                        severity="info"
                                         sx={{ mt: 2 }}
                                         icon={<InfoIcon />}
                                     >
@@ -436,14 +426,14 @@ const AgentCreate = () => {
                         </Grid>
                     </>
                 );
-            
+
             case 1:
                 return (
                     <>
                         <Typography variant="h6" sx={{ mb: 3, color: primaryTextColor }}>
                             {t('configureYourAgent')}
                         </Typography>
-                        
+
                         <Grid container spacing={3}>
                             <Grid item xs={12}>
                                 <TextField
@@ -455,19 +445,19 @@ const AgentCreate = () => {
                                     helperText={t('chooseDescriptiveName')}
                                 />
                             </Grid>
-                            
+
                             <Grid item xs={12}>
                                 <Typography variant="subtitle1" sx={{ mb: 2, color: primaryTextColor }}>
                                     {t('selectAIModel')}
                                 </Typography>
-                                
+
                                 <Grid container spacing={2}>
                                     {availableModels.map(model => (
                                         <Grid item xs={12} sm={6} key={model.id}>
-                                            <Paper 
+                                            <Paper
                                                 elevation={0}
                                                 onClick={() => setAgentData({ ...agentData, model: model.id })}
-                                                sx={{ 
+                                                sx={{
                                                     p: 2,
                                                     border: `1px solid ${agentData.model === model.id ? theme.palette.primary.main : borderColor}`,
                                                     borderRadius: 2,
@@ -481,16 +471,16 @@ const AgentCreate = () => {
                                                 }}
                                             >
                                                 {agentData.model === model.id && (
-                                                    <CheckCircleIcon 
-                                                        sx={{ 
-                                                            position: 'absolute', 
-                                                            top: 8, 
-                                                            right: 8, 
-                                                            color: theme.palette.primary.main 
-                                                        }} 
+                                                    <CheckCircleIcon
+                                                        sx={{
+                                                            position: 'absolute',
+                                                            top: 8,
+                                                            right: 8,
+                                                            color: theme.palette.primary.main
+                                                        }}
                                                     />
                                                 )}
-                                                
+
                                                 <Typography variant="subtitle1" fontWeight={500} sx={{ mb: 1, color: 'primaryTextColor' }}>
                                                     {model.name}
                                                 </Typography>
@@ -509,13 +499,13 @@ const AgentCreate = () => {
                                                 <Typography variant="body2" sx={{ color: secondaryTextColor, mb: 1 }}>
                                                     {model.provider}
                                                 </Typography>
-                                                
+
                                                 {Array.isArray(model.specialties) ? (
                                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                         {model.specialties.map((specialty) => (
-                                                            <Chip 
-                                                                key={specialty} 
-                                                                label={specialty} 
+                                                            <Chip
+                                                                key={specialty}
+                                                                label={specialty}
                                                                 size="small"
                                                                 sx={{
                                                                     backgroundColor: isDarkMode ? 'rgba(56, 139, 253, 0.15)' : 'rgba(3, 102, 214, 0.1)',
@@ -534,14 +524,14 @@ const AgentCreate = () => {
                                         </Grid>
                                     ))}
                                 </Grid>
-                                
+
                                 {availableModels.length === 0 && (
                                     <Alert severity="info" sx={{ mt: 2 }}>
                                         {t('loadingModels') || 'Loading AI models...'}
                                     </Alert>
                                 )}
                             </Grid>
-                            
+
                             {(agentData.function === 'PR Review' || agentData.function === 'Both') && (
                                 <Grid item xs={12}>
                                     <Autocomplete
@@ -552,10 +542,10 @@ const AgentCreate = () => {
                                         freeSolo
                                         renderTags={(value, getTagProps) =>
                                             value.map((option, index) => (
-                                                <Chip 
-                                                    variant="outlined" 
-                                                    label={option} 
-                                                    {...getTagProps({ index })} 
+                                                <Chip
+                                                    variant="outlined"
+                                                    label={option}
+                                                    {...getTagProps({ index })}
                                                 />
                                             ))
                                         }
@@ -570,7 +560,7 @@ const AgentCreate = () => {
                                     />
                                 </Grid>
                             )}
-                            
+
                             <Grid item xs={12}>
                                 <FormControl component="fieldset">
                                     <FormLabel component="legend" sx={{ color: primaryTextColor }}>
@@ -604,40 +594,40 @@ const AgentCreate = () => {
                         </Grid>
                     </>
                 );
-            
+
             case 2:
                 // Encontra o modelo selecionado
-    const selectedModel = availableModels.find(m => m.id === agentData.model);
-    // Encontra a opção de comprimento de resposta selecionada
-    const selectedResponseLength = responseLengthOptions.find(o => o.id === agentData.responseLength);
-    
-    // Calcula os tokens estimados - usando valores padrão se não encontrar
-    const maxTokens = selectedModel?.max_tokens || 8000; // valor padrão
-    const tokenPercentage = selectedResponseLength?.tokenPercentage || 0.6;
-    const estimatedTokens = Math.round(maxTokens * tokenPercentage);
-    
-    // Calcula o custo estimado
-    const promptCost = selectedModel?.prompt_token_cost || 0;
-    const completionCost = selectedModel?.completion_token_cost || 0;
-    const avgTokensPerOperation = estimatedTokens;
-    const operationsPerDay = 1;
-    const daysInMonth = 30;
-    
-    // Custo total = (prompt + completion) * tokens * operações * dias
-    const totalMonthlyCost = ((promptCost + completionCost) * avgTokensPerOperation * operationsPerDay * daysInMonth) || 0;
-                
+                const selectedModel = availableModels.find(m => m.id === agentData.model);
+                // Encontra a opção de comprimento de resposta selecionada
+                const selectedResponseLength = responseLengthOptions.find(o => o.id === agentData.responseLength);
+
+                // Calcula os tokens estimados - usando valores padrão se não encontrar
+                const maxTokens = selectedModel?.max_tokens || 8000; // valor padrão
+                const tokenPercentage = selectedResponseLength?.tokenPercentage || 0.6;
+                const estimatedTokens = Math.round(maxTokens * tokenPercentage);
+
+                // Calcula o custo estimado
+                const promptCost = selectedModel?.prompt_token_cost || 0;
+                const completionCost = selectedModel?.completion_token_cost || 0;
+                const avgTokensPerOperation = estimatedTokens;
+                const operationsPerDay = 1;
+                const daysInMonth = 30;
+
+                // Custo total = (prompt + completion) * tokens * operações * dias
+                const totalMonthlyCost = ((promptCost + completionCost) * avgTokensPerOperation * operationsPerDay * daysInMonth) || 0;
+
                 return (
                     <>
                         <Typography variant="h6" sx={{ mb: 3, color: primaryTextColor }}>
                             {t('reviewAgentConfig')}
                         </Typography>
-                        
+
                         <Grid container spacing={2}>
                             <Grid item xs={12}>
-                                <Paper 
+                                <Paper
                                     elevation={0}
-                                    sx={{ 
-                                        p: 3, 
+                                    sx={{
+                                        p: 3,
                                         borderRadius: 2,
                                         backgroundColor: isDarkMode ? 'rgba(46, 164, 79, 0.05)' : 'rgba(46, 164, 79, 0.02)',
                                         border: `1px solid ${isDarkMode ? 'rgba(46, 164, 79, 0.2)' : 'rgba(46, 164, 79, 0.1)'}`,
@@ -652,7 +642,7 @@ const AgentCreate = () => {
                                                 {agentData.name}
                                             </Typography>
                                         </Grid>
-                                        
+
                                         <Grid item xs={6}>
                                             <Typography variant="subtitle2" sx={{ color: secondaryTextColor }}>
                                                 {t('function')}
@@ -661,7 +651,7 @@ const AgentCreate = () => {
                                                 {availableFunctions.find(f => f.id === agentData.function)?.title || t('notSelected')}
                                             </Typography>
                                         </Grid>
-                                        
+
                                         <Grid item xs={6}>
                                             <Typography variant="subtitle2" sx={{ color: secondaryTextColor }}>
                                                 {t('repository')}
@@ -670,7 +660,7 @@ const AgentCreate = () => {
                                                 {getRepositoryNameById(agentData.repository)}
                                             </Typography>
                                         </Grid>
-                                        
+
                                         <Grid item xs={6}>
                                             <Typography variant="subtitle2" sx={{ color: secondaryTextColor }}>
                                                 {t('model')}
@@ -679,7 +669,7 @@ const AgentCreate = () => {
                                                 {availableModels.find(m => m.id === agentData.model)?.name || t('notSelected')}
                                             </Typography>
                                         </Grid>
-                                        
+
                                         <Grid item xs={6}>
                                             <Typography variant="subtitle2" sx={{ color: secondaryTextColor }}>
                                                 {t('responseDetail')}
@@ -688,7 +678,7 @@ const AgentCreate = () => {
                                                 {selectedResponseLength?.title || t('medium')}
                                             </Typography>
                                         </Grid>
-                                        
+
                                         <Grid item xs={6}>
                                             <Typography variant="subtitle2" sx={{ color: secondaryTextColor }}>
                                                 {t('estimatedTokens')}
@@ -697,7 +687,7 @@ const AgentCreate = () => {
                                                 {estimatedTokens.toLocaleString()} {t('of')} {maxTokens.toLocaleString()}
                                             </Typography>
                                         </Grid>
-                                        
+
                                         {(agentData.function === 'PR Review' || agentData.function === 'Both') && (
                                             <Grid item xs={12}>
                                                 <Typography variant="subtitle2" sx={{ color: secondaryTextColor }}>
@@ -705,9 +695,9 @@ const AgentCreate = () => {
                                                 </Typography>
                                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1, mb: 2 }}>
                                                     {agentData.branches.map(branch => (
-                                                        <Chip 
-                                                            key={branch} 
-                                                            label={branch} 
+                                                        <Chip
+                                                            key={branch}
+                                                            label={branch}
                                                             size="small"
                                                             sx={{
                                                                 backgroundColor: isDarkMode ? 'rgba(56, 139, 253, 0.15)' : 'rgba(3, 102, 214, 0.1)',
@@ -719,14 +709,14 @@ const AgentCreate = () => {
                                             </Grid>
                                         )}
                                     </Grid>
-                                    
+
                                     <Divider sx={{ my: 2 }} />
-                                    
+
                                     <Box sx={{ mt: 2 }}>
                                         <Typography variant="subtitle2" sx={{ color: secondaryTextColor, mb: 1 }}>
                                             {t('estimatedCost30Days')}
                                         </Typography>
-                                        
+
                                         <Typography variant="h5" sx={{ color: theme.palette.primary.main, fontWeight: 500 }}>
                                             ${totalMonthlyCost.toFixed(4)}
                                         </Typography>
@@ -736,11 +726,11 @@ const AgentCreate = () => {
                                     </Box>
                                 </Paper>
                             </Grid>
-                            
+
                             <Grid item xs={12}>
-                                <Alert 
+                                <Alert
                                     severity="info"
-                                    sx={{ 
+                                    sx={{
                                         borderRadius: 2,
                                         '& .MuiAlert-message': { color: 'inherit' }
                                     }}
@@ -751,7 +741,7 @@ const AgentCreate = () => {
                         </Grid>
                     </>
                 );
-            
+
             default:
                 return 'Unknown step';
         }
@@ -760,10 +750,10 @@ const AgentCreate = () => {
     return (
         <Layout title={t('createNewAgentTitle')}>
             <Box sx={{ mb: 4 }}>
-                <Button 
-                    startIcon={<ArrowBackIcon />} 
+                <Button
+                    startIcon={<ArrowBackIcon />}
                     onClick={handleCancel}
-                    sx={{ 
+                    sx={{
                         mb: 2,
                         color: secondaryTextColor,
                         '&:hover': { color: primaryTextColor }
@@ -771,11 +761,11 @@ const AgentCreate = () => {
                 >
                     {t('back')}
                 </Button>
-                
-                <Paper 
+
+                <Paper
                     elevation={0}
-                    sx={{ 
-                        p: 3, 
+                    sx={{
+                        p: 3,
                         borderRadius: 2,
                         backgroundColor: paperBgColor,
                         border: `1px solid ${borderColor}`,
@@ -788,11 +778,11 @@ const AgentCreate = () => {
                             </Step>
                         ))}
                     </Stepper>
-                    
+
                     <Box sx={{ mt: 2, mb: 4 }}>
                         {getStepContent(activeStep)}
                     </Box>
-                    
+
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                         <Button
                             disabled={activeStep === 0}
@@ -832,8 +822,8 @@ const AgentCreate = () => {
                 </Paper>
             </Box>
             <Backdrop
-                sx={{ 
-                    color: '#fff', 
+                sx={{
+                    color: '#fff',
                     zIndex: (theme) => theme.zIndex.drawer + 1,
                     display: 'flex',
                     flexDirection: 'column',
@@ -843,12 +833,12 @@ const AgentCreate = () => {
             >
                 <CircularProgress color="inherit" size={60} />
                 <Typography variant="h6" sx={{ color: 'white' }}>
-                    {t('creating') }
+                    {t('creating')}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                    {t('waiting') }
+                    {t('waiting')}
                 </Typography>
-            </Backdrop>                
+            </Backdrop>
 
         </Layout>
     );

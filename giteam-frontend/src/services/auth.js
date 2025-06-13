@@ -21,10 +21,8 @@ export const setToken = (token) => {
 }
 
 export const handleAuthCallback = async () => {
-    console.log('Initializing authentication callback...');
     const urlParams = new URLSearchParams(window.location.search);
     const accessToken = urlParams.get('code');
-    console.log('Access token received:', accessToken);
     if (!accessToken) {
         throw new Error('No access token found in the URL');
     }

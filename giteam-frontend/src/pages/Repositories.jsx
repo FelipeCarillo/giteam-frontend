@@ -87,10 +87,7 @@ const Repositories = () => {
             setError(null);
             
             try {
-                console.log('🔄 Fetching repositories...');
                 const data = await getRepositories();
-                
-                console.log('✅ Repositories fetched:', data);
                 
                 // Verifica se data tem a propriedade repositories
                 if (data && data.repositories && Array.isArray(data.repositories)) {
@@ -117,7 +114,6 @@ const Repositories = () => {
 
         fetchRepositories();
     }, []);
-
     // 🔍 Filter repositories by name
     const filteredRepositories = repositories.filter(repo =>
         repo.name && repo.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -126,9 +122,6 @@ const Repositories = () => {
     // 🧠 Toggle agent status using API
     const handleToggleActiveAgent = async (agentId) => {
         try {
-            console.log('🔄 Alternando status do agente:', agentId);
-            
-            // Encontrar o agente atual para obter seu status
             let currentAgent = null;
             for (const repo of repositories) {
                 if (repo.agents) {
@@ -152,15 +145,12 @@ const Repositories = () => {
                     agents: repo.agents ? repo.agents.map(agent => {
                         if (agent.id === agentId) {
                             const newStatus = !agent.active;
-                            console.log('✅ Novo status do agente:', newStatus);
                             return { ...agent, active: newStatus };
                         }
                         return agent;
                     }) : []
                 }))
             );
-            
-            console.log('✅ Status do agente alterado com sucesso');
             
         } catch (error) {
             setError(`Erro ao alternar status do agente: ${error.message}`);
@@ -170,8 +160,6 @@ const Repositories = () => {
     // 🗑️ Delete agent using API
     const handleDeleteAgent = async (agentId) => {
         try {
-            console.log('🗑️ Excluindo agente:', agentId);
-            
             // Usar a função correta do serviço agents
             await deleteAgent(agentId);
             
@@ -182,8 +170,6 @@ const Repositories = () => {
                     agents: repo.agents ? repo.agents.filter(agent => agent.id !== agentId) : []
                 }))
             );
-            
-            console.log('✅ Agente excluído com sucesso');
         } catch (error) {
             console.error('❌ Erro ao excluir agente:', error);
             setError(`Erro ao excluir agente: ${error.message}`);
@@ -192,7 +178,6 @@ const Repositories = () => {
 
     // 🚀 Navigate to add agent page
     const handleAddAgent = (repoId) => {
-        console.log('➕ Adding agent to repository:', repoId);
         navigate('/agents/create', { state: { repositoryId: repoId } });
     };
 

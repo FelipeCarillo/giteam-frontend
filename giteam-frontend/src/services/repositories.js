@@ -18,8 +18,6 @@ export const getRepositories = async () => {
 
 export const createRepository = async (repositoryData) => {
     try {
-        console.log('🚀 Starting repository creation...');
-        console.log('📋 Original repository data:', repositoryData);
         
         // Validate required fields before sending
         const requiredFields = ['name', 'link'];
@@ -45,23 +43,6 @@ export const createRepository = async (repositoryData) => {
             ...(repositoryData.updated_at && { updated_at: repositoryData.updated_at }),
         };
         
-        console.log('🧹 Cleaned repository data:', cleanedData);
-        console.log('📊 Data types:', {
-            name: typeof cleanedData.name,
-            link: typeof cleanedData.link,
-            description: typeof cleanedData.description,
-            language: typeof cleanedData.language,
-            stars: typeof cleanedData.stars,
-            forks: typeof cleanedData.forks,
-            github_id: typeof cleanedData.github_id,
-            private: typeof cleanedData.private
-        });
-        
-        // Test API endpoint first
-        console.log('🌐 Testing API endpoint...');
-        console.log('📡 Backend URL:', api.defaults.baseURL);
-        console.log('🔑 Authorization header:', api.defaults.headers.Authorization ? 'Present' : 'Missing');
-        
         const response = await api.post('/api/repositories', cleanedData, {
             headers: {
                 'Content-Type': 'application/json',
@@ -69,11 +50,7 @@ export const createRepository = async (repositoryData) => {
             // Add timeout
             timeout: 10000
         });
-        
-        console.log('✅ Repository created successfully!');
-        console.log('📊 Response status:', response.status);
-        console.log('📋 Response data:', response.data);
-        
+
         return response.data;
         
     } catch (error) {
@@ -124,7 +101,6 @@ export const createRepository = async (repositoryData) => {
 // Alternative minimal version for testing
 export const createRepositoryMinimal = async (repositoryData) => {
     try {
-        console.log('🧪 Testing minimal repository creation...');
         
         // Send only essential data
         const minimalData = {
@@ -133,10 +109,7 @@ export const createRepositoryMinimal = async (repositoryData) => {
             description: repositoryData.description || ""
         };
         
-        console.log('📋 Minimal data:', minimalData);
-        
         const response = await api.post('/api/repositories', minimalData);
-        console.log('✅ Minimal creation success:', response.data);
         return response.data;
         
     } catch (error) {
@@ -148,12 +121,9 @@ export const createRepositoryMinimal = async (repositoryData) => {
 // Test API connectivity
 export const testApiConnection = async () => {
     try {
-        console.log('🧪 Testing API connection...');
-        console.log('🌐 Backend URL:', api.defaults.baseURL);
         
         // Test GET first
         const getResponse = await api.get('/api/repositories');
-        console.log('✅ GET /api/repositories works:', getResponse.status);
         
         // Test with a very simple POST
         const testData = {
@@ -162,9 +132,7 @@ export const testApiConnection = async () => {
             description: "Test repository"
         };
         
-        console.log('🧪 Testing POST with:', testData);
         const postResponse = await api.post('/api/repositories', testData);
-        console.log('✅ POST /api/repositories works:', postResponse.status);
         
         return { success: true, data: postResponse.data };
         
@@ -233,15 +201,11 @@ export const addAgentToRepository = async (repositoryId, agentData) => {
 // GitHub API Integration - Get current user's repositories
 export const getCurrentUserGitHubRepositories = async () => {
     try {
-        console.log('🔍 Fetching GitHub repositories...');
-        
         // Check if token exists
         const token = localStorage.getItem("githubToken");
         if (!token) {
             throw new Error('GitHub token not found. Please authenticate first.');
         }
-        
-        console.log('🔑 GitHub token found, making request...');
         
         // Get user repositories with proper parameters
         const response = await apiGitHub.get('/user/repos', {
@@ -252,8 +216,7 @@ export const getCurrentUserGitHubRepositories = async () => {
                 affiliation: 'owner,collaborator,organization_member'
             }
         });
-        
-        console.log('✅ GitHub API Success:', response.data?.length, 'repositories found');
+    
         return response.data;
         
     } catch (error) {
@@ -297,8 +260,6 @@ export const getGitHubRepositoriesDirect = async () => {
             throw new Error('No GitHub token available');
         }
         
-        console.log('🔍 Making direct GitHub API call...');
-        
         const response = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated', {
             method: 'GET',
             headers: {
@@ -309,8 +270,6 @@ export const getGitHubRepositoriesDirect = async () => {
             }
         });
         
-        console.log('📡 Direct API Response Status:', response.status);
-        
         if (!response.ok) {
             const errorText = await response.text();
             console.error('❌ Direct API Error Response:', errorText);
@@ -318,7 +277,6 @@ export const getGitHubRepositoriesDirect = async () => {
         }
         
         const data = await response.json();
-        console.log('✅ Direct API Success:', data?.length, 'repositories found');
         return data;
         
     } catch (error) {

@@ -58,27 +58,30 @@ const Settings = () => {
     setError('');
     setSuccess('');
     try {
-      const res = await api.get('/user/provider/secret-keys');
+      const res = await api.get('/user/provider/secret-key');
       const data = res.data;
-      setProviders(data.providers || []);
+      const providerList = ['OpenAI', 'Anthropic'];
+      setProviders(providerList);
       const initialKeys = {};
-      data.keys.forEach(key => {
-        initialKeys[key.provider] = {
-          value: key.secret_key || '',
-          exists: true,
-          id: key.id || null
+      providerList.forEach(provider => {
+        const keyData = data.provider_secret_key.find(item => item.provider === provider) || {};
+        initialKeys[provider] = {
+          value: keyData.secret_key || '',
+          exists: !!keyData.id,
+          id: keyData.id || null
         };
+        setVisible(prev => ({ ...prev, [provider]: false }));
+        setEditing(prev => ({ ...prev, [provider]: false }));
       });
       setKeys(initialKeys);
-      setEditing(data.providers.reduce((acc, provider) => ({ ...acc, [provider]: false }), {}));
-      setVisible(data.providers.reduce((acc, provider) => ({ ...acc, [provider]: false }), {}));
+      setLoading(false);
     } catch (err) {
+      setLoading(false);
       setError(t('settings.ai_keys.load_error'));
       console.error('Error loading settings:', err);
-    } finally {
-      setLoading(false);
     }
   }, [t]);
+
   useEffect(() => {
     loadSettings();
   }, [loadSettings]);
@@ -298,27 +301,6 @@ const Settings = () => {
                         </Typography>
                       </Box>
                     </Stack>
-
-                    <Stack direction="row" spacing={1}>
-                      {hasKey && (
-                        <Chip
-                          icon={<CheckCircleIcon />}
-                          label={t('settings.ai_keys.configured')}
-                          color="success"
-                          variant="outlined"
-                          size="small"
-                        />
-                      )}
-                      {!hasKey && (
-                        <Chip
-                          icon={<InfoIcon />}
-                          label={t('settings.ai_keys.not_configured')}
-                          color="default"
-                          variant="outlined"
-                          size="small"
-                        />
-                      )}
-                    </Stack>
                   </Stack>
 
                   <Divider sx={{ mb: 3 }} />
@@ -442,7 +424,6 @@ const Settings = () => {
                 {t('settings.ai_keys.info_title')}
               </Typography>
               <Typography variant="body2" color="text.secondary" component="div">
-                • {t('settings.ai_keys.info_encrypted')}
                 <br />
                 • {t('settings.ai_keys.info_security')}
                 <br />

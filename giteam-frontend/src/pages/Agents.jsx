@@ -130,10 +130,7 @@ const Agents = () => {
 
     const fetchAgentsData = async () => {
         try {
-            console.log('🔄 Carregando dados dos agentes...');
             const response = await getRepositories();
-            
-            console.log('✅ Dados recebidos da API:', response);
             
             // Armazenar repositórios para referência
             setRepositories(response.repositories || []);
@@ -141,13 +138,6 @@ const Agents = () => {
             // Transformar dados da API para formato do componente
             const transformedAgents = transformApiDataToAgents(response);
             setAgents(transformedAgents);
-            
-            console.log('📋 Agentes transformados:', transformedAgents);
-            console.log('🔍 Verificando aiModelName:', transformedAgents.map(a => ({ 
-                name: a.name, 
-                aiModelId: a.aiModelId, 
-                aiModelName: a.aiModelName 
-            })));
             
         } catch (error) {
             console.error('❌ Erro ao carregar agentes:', error);
@@ -184,15 +174,12 @@ const Agents = () => {
     // ✅ Função corrigida para alternar status ativo/inativo do agente
 const handleToggleActiveAgent = async (agentId) => {
     try {
-        console.log('🔄 Alternando status do agente:', agentId);
         
         // Encontrar o agente atual para obter seu status
         const currentAgent = agents.find(agent => agent.id === agentId);
         if (!currentAgent) {
             throw new Error('Agente não encontrado');
         }
-        
-        console.log('📊 Status atual do agente:', currentAgent.active);
         
         // Usar a função corrigida do serviço de agents
         await toggleAgentStatus(agentId, currentAgent.active);
@@ -201,14 +188,12 @@ const handleToggleActiveAgent = async (agentId) => {
         const updatedAgents = agents.map(agent => {
             if (agent.id === agentId) {
                 const newStatus = !agent.active;
-                console.log('✅ Novo status do agente:', newStatus);
                 return { ...agent, active: newStatus };
             }
             return agent;
         });
         
         setAgents(updatedAgents);
-        console.log('✅ Status do agente alterado com sucesso');
         
     } catch (error) {
         console.error('❌ Erro ao alternar status do agente:', error);
@@ -226,15 +211,13 @@ const handleToggleActiveAgent = async (agentId) => {
     // ✅ Excluir agente - Usando função correta do serviço agents
     const handleDeleteAgent = async (agentId) => {
         try {
-            console.log('🗑️ Excluindo agente:', agentId);
             
             // Usar a função correta do serviço agents
             await deleteAgent(agentId);
             
             const updatedAgents = agents.filter(agent => agent.id !== agentId);
             setAgents(updatedAgents);
-            
-            console.log('✅ Agente excluído com sucesso');
+
         } catch (error) {
             console.error('❌ Erro ao excluir agente:', error);
             setError('Erro ao excluir agente.');

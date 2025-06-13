@@ -7,7 +7,7 @@ import { getUserInfo } from '../../services/auth';
 
 // Contexto para alternar o tema dark/light
 export const ThemeContext = createContext({
-  toggleColorMode: () => {},
+    toggleColorMode: () => { },
 });
 
 const Layout = ({ children, title }) => {
@@ -21,7 +21,14 @@ const Layout = ({ children, title }) => {
     useEffect(() => {
         const fetchUserData = async () => {
             try {
+                if (localStorage.getItem('user')) {
+                    const cachedUser = JSON.parse(localStorage.getItem('user'));
+                    setUser(cachedUser);
+                    setLoading(false);
+                    return;
+                }
                 const userData = await getUserInfo();
+                localStorage.setItem('user', JSON.stringify(userData));
                 setUser(userData);
             } catch (error) {
                 console.error('Error fetching user data:', error);
@@ -29,12 +36,10 @@ const Layout = ({ children, title }) => {
                 setLoading(false);
             }
         };
-
         fetchUserData();
     }, []);
 
     useEffect(() => {
-        // Fecha o drawer se for mobile
         if (isMobile) {
             setDrawerOpen(false);
         }

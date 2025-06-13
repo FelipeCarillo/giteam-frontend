@@ -34,13 +34,9 @@ function Dashboard() {
     };
 
     // Função para buscar o custo total do mês atual
-    const fetchCurrentMonthCost = async () => {
+    const fetchCurrentMonthCost = async (costData) => {
         try {
-            const costData = await getCosts();
             const currentMonth = getCurrentMonth();
-            
-            console.log('📊 Cost data received:', costData);
-            console.log('📊 Current month:', currentMonth);
             
             if (costData && costData.cost_history && Array.isArray(costData.cost_history)) {
                 // Procura pelo registro do mês atual
@@ -49,10 +45,8 @@ function Dashboard() {
                 );
                 
                 if (currentMonthData) {
-                    console.log('📊 Current month cost data:', currentMonthData);
                     setCurrentMonthCost(currentMonthData.total_cost || 0);
                 } else {
-                    console.log('📊 No cost data found for current month, using 0');
                     setCurrentMonthCost(0);
                 }
             } else {
@@ -69,22 +63,20 @@ function Dashboard() {
         const fetchData = async () => {
             try {
                 // Buscar dados dos repositórios
-                const reposResponse = await getRepositories();
                 
-                // Buscar operações usando o service
-                const opsResponse = await getOperations();
+                const [reposResponse, opsResponse, costsResponse] = await Promise.all([
+                    getRepositories(),
+                    getOperations(),
+                    getCosts()
+                ]);
                 const opsData = opsResponse?.operations || [];
                 
                 const reposData = reposResponse?.repositories || [];
 
-                console.log('📊 Repositories data:', reposData);
-                console.log('📊 Operations data:', opsData);
-
                 setRepositories(Array.isArray(reposData) ? reposData : []);
                 setOperations(Array.isArray(opsData) ? opsData : []);
 
-                // Buscar custo do mês atual
-                await fetchCurrentMonthCost();
+                await fetchCurrentMonthCost(costsResponse);
 
             } catch (error) {
                 console.error('Erro ao buscar dados da API:', error);
@@ -111,20 +103,8 @@ function Dashboard() {
             if (Array.isArray(repo.agents)) {
                 const activeAgentsInRepo = repo.agents.filter(agent => agent.active === true);
                 totalActiveAgents += activeAgentsInRepo.length;
-                
-                // Debug logging
-                console.log(`📊 Repository "${repo.name}":`, {
-                    totalAgents: repo.agents.length,
-                    activeAgents: activeAgentsInRepo.length,
-                    agents: repo.agents.map(agent => ({ 
-                        name: agent.name, 
-                        active: agent.active 
-                    }))
-                });
             }
         });
-        
-        console.log('📊 Total active agents across all repositories:', totalActiveAgents);
         return totalActiveAgents;
     };
 
@@ -142,8 +122,6 @@ function Dashboard() {
             // Check if this repository has at least one active agent
             return repo.agents.some(agent => agent.active === true);
         });
-        
-        console.log('📊 Repositories with active agents:', reposWithActiveAgents.length);
         return reposWithActiveAgents.length;
     };
 
@@ -175,17 +153,6 @@ function Dashboard() {
         const prReviews = operations.filter(op => op.action === 'PR Review').length;
         const issueResolutions = operations.filter(op => op.action === 'Issue Resolution').length;
         const total = operations.length;
-
-        console.log('📊 Operations breakdown:', {
-            total,
-            prReviews,
-            issueResolutions,
-            operations: operations.map(op => ({ 
-                id: op.id, 
-                action: op.action, 
-                status: op.status 
-            }))
-        });
 
         return { 
             total,
