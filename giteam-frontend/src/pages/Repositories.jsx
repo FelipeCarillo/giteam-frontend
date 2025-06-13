@@ -1,15 +1,12 @@
 // pages/Repositories.jsx
 import React, { useState, useEffect } from 'react';
 import { 
-    Box, Typography, Paper, Button, TextField, Dialog,
-    DialogTitle, DialogContent, DialogActions,
-    InputAdornment, useTheme, Select,
-    FormControl, InputLabel,
+    Box, Typography, Paper, Button, TextField,
+    InputAdornment, useTheme,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
-import GitHubIcon from '@mui/icons-material/GitHub';
 
 import Layout from '../components/layout/Layout';
 import RepositoryCard from '../components/repository/RepositoryCard';
@@ -30,12 +27,30 @@ const Repositories = () => {
     // 🔄 Fetch repositories from API
     useEffect(() => {
         const fetchRepositories = async () => {
+            setLoading(true); // É bom definir o loading aqui
             try {
                 const res = await fetch('/api/repositories');
+
+                // ---> INÍCIO DA CORREÇÃO <---
+                // Verifica se a resposta da requisição foi bem-sucedida (status 2xx)
+                if (!res.ok) {
+                    // Se não for, lança um erro para ser pego pelo bloco catch
+                    throw new Error(`Erro na API com status: ${res.status}`);
+                }
+
                 const data = await res.json();
-                setRepositories(data);
+                // Garante que os dados recebidos são um array antes de definir o estado
+                if (Array.isArray(data)) {
+                    setRepositories(data);
+                } else {
+                    console.error("Erro: A API não retornou um array.", data);
+                    setRepositories([]); // Define como array vazio para evitar quebras
+                }
+                // ---> FIM DA CORREÇÃO <---
+
             } catch (error) {
                 console.error('Erro ao buscar repositórios:', error);
+                setRepositories([]); // IMPORTANTE: Garante que seja um array em caso de erro
             } finally {
                 setLoading(false);
             }
@@ -47,11 +62,6 @@ const Repositories = () => {
     const filteredRepositories = repositories.filter(repo =>
         repo.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-
-    // ➕ Add new repo
-    const handleNavigate = () => {
-        
-    };
 
     // 🧠 Local toggle (pode ser trocado por chamada PATCH futuramente)
     const handleToggleActiveAgent = (agentId) => {
@@ -151,6 +161,6 @@ const Repositories = () => {
             )}
         </Layout>
     );
-};
+}
 
 export default Repositories;

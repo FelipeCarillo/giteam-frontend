@@ -1,0 +1,169 @@
+graph TB
+    %% Usuários e Áreas
+    subgraph "👥 USUÁRIOS POR ÁREA"
+        U1[👤 Usuário Compliance]
+        U2[👤 Usuário Operações]
+        U3[👤 Usuário Riscos]
+        U4[👤 Usuário Tecnologia]
+    end
+
+    %% Autenticação
+    subgraph "🔐 AUTENTICAÇÃO"
+        AUTH[Azure AD / SSO]
+        AWS_CREDS[AWS Credentials via AssumeRole]
+    end
+
+    %% Frontend
+    subgraph "💻 FRONTEND (React + MUI)"
+        CHAT[🗨️ Chat Interface estilo Claude]
+        SIDEBAR[📋 Sidebar - Áreas - Agentes - Histórico]
+        WIZARD[🧙‍♂️ Wizard Criação - Info Básica - Tools - Config Athena - Prompt - Teste]
+    end
+
+    %% Backend Core
+    subgraph "⚙️ BACKEND (FastAPI + Python)"
+        API_GATEWAY[🚪 API Gateway]
+        AGENT_MGR[🤖 Agent Manager]
+        AUTH_SVC[🔑 Auth Service]
+        DISCOVERY[🔍 Athena Discovery Service]
+    end
+
+    %% Tools Internas
+    subgraph "🛠️ TOOLS INTERNAS"
+        OUTLOOK_TOOL[📧 Outlook Tool - Consulta emails - Agenda reuniões - Resume threads]
+        ATHENA_TOOL[📊 Athena Tool - Descoberta dinâmica - SQL queries - Workgroups]
+        REPORT_TOOL[📄 Report Tool - Gera relatórios - Templates - Export]
+    end
+
+    %% AWS Services
+    subgraph "☁️ AWS SERVICES"
+        ATHENA[Amazon Athena]
+        S3[S3 Buckets]
+        IAM[IAM Roles por Área]
+        
+        subgraph "📊 DATA LAKE"
+            DB1[(btg_compliance - transactions - alerts - audit_log)]
+            DB2[(btg_trading - trades - positions - market_data)]
+            DB3[(btg_risk - exposures - limits - scenarios)]
+            DB4[(btg_shared - reference_data)]
+        end
+    end
+
+    %% Agentes por Área
+    subgraph "🤖 AGENTES ESPECIALIZADOS"
+        subgraph "Compliance"
+            A1[Assistente Compliance]
+            A2[Auxiliar Auditoria]
+        end
+        
+        subgraph "Operações"
+            A3[Monitor Operações]
+        end
+        
+        subgraph "Riscos"
+            A4[Analisador Riscos]
+        end
+        
+        subgraph "Tecnologia"
+            A5[Suporte Técnico]
+        end
+    end
+
+    %% Storage
+    subgraph "💾 STORAGE"
+        CONFIG_DB[(Config Database - Agentes - Permissões - Histórico)]
+        CACHE[Redis Cache - Discoveries - Sessions]
+    end
+
+    %% Fluxos principais
+    U1 --> AUTH
+    U2 --> AUTH
+    U3 --> AUTH
+    U4 --> AUTH
+    
+    AUTH --> AWS_CREDS
+    AUTH --> CHAT
+    
+    CHAT --> SIDEBAR
+    CHAT --> API_GATEWAY
+    SIDEBAR --> WIZARD
+    
+    API_GATEWAY --> AGENT_MGR
+    API_GATEWAY --> AUTH_SVC
+    API_GATEWAY --> DISCOVERY
+    
+    AUTH_SVC --> AWS_CREDS
+    DISCOVERY --> ATHENA
+    DISCOVERY --> IAM
+    
+    AGENT_MGR --> OUTLOOK_TOOL
+    AGENT_MGR --> ATHENA_TOOL
+    AGENT_MGR --> REPORT_TOOL
+    
+    ATHENA_TOOL --> ATHENA
+    ATHENA --> DB1
+    ATHENA --> DB2
+    ATHENA --> DB3
+    ATHENA --> DB4
+    
+    ATHENA --> S3
+    
+    AGENT_MGR --> A1
+    AGENT_MGR --> A2
+    AGENT_MGR --> A3
+    AGENT_MGR --> A4
+    AGENT_MGR --> A5
+    
+    AGENT_MGR --> CONFIG_DB
+    DISCOVERY --> CACHE
+    
+    %% Processo de Descoberta
+    subgraph "🔍 FLUXO DE DESCOBERTA ATHENA"
+        STEP1[1. Usuário autenticado]
+        STEP2[2. Assume Role por área]
+        STEP3[3. Lista databases acessíveis]
+        STEP4[4. Lista tables/views por DB]
+        STEP5[5. Cache resultado]
+        STEP6[6. Apresenta TreeView no Frontend]
+        
+        STEP1 --> STEP2
+        STEP2 --> STEP3
+        STEP3 --> STEP4
+        STEP4 --> STEP5
+        STEP5 --> STEP6
+    end
+    
+    %% Processo de Criação de Agente
+    subgraph "🧙‍♂️ FLUXO DE CRIAÇÃO DE AGENTE"
+        CREATE1[1. Info Básica Nome, Área, Descrição]
+        CREATE2[2. Selecionar Tools Outlook, Athena, Reports]
+        CREATE3[3. Config Athena Workgroup, Resources, Docs]
+        CREATE4[4. Definir Prompt Comportamento, Tom]
+        CREATE5[5. Testar & Publicar Validação, Deploy]
+        
+        CREATE1 --> CREATE2
+        CREATE2 --> CREATE3
+        CREATE3 --> CREATE4
+        CREATE4 --> CREATE5
+    end
+
+    %% Estilos
+    classDef userClass fill:#e1f5fe
+    classDef authClass fill:#fff3e0
+    classDef frontendClass fill:#f3e5f5
+    classDef backendClass fill:#e8f5e8
+    classDef toolClass fill:#fff8e1
+    classDef awsClass fill:#ffe0b2
+    classDef agentClass fill:#fce4ec
+    classDef storageClass fill:#f1f8e9
+    classDef processClass fill:#e3f2fd
+    
+    class U1,U2,U3,U4 userClass
+    class AUTH,AWS_CREDS,AUTH_SVC authClass
+    class CHAT,SIDEBAR,WIZARD frontendClass
+    class API_GATEWAY,AGENT_MGR,DISCOVERY backendClass
+    class OUTLOOK_TOOL,ATHENA_TOOL,REPORT_TOOL toolClass
+    class ATHENA,S3,IAM,DB1,DB2,DB3,DB4 awsClass
+    class A1,A2,A3,A4,A5 agentClass
+    class CONFIG_DB,CACHE storageClass
+    class STEP1,STEP2,STEP3,STEP4,STEP5,STEP6,CREATE1,CREATE2,CREATE3,CREATE4,CREATE5 processClass
